@@ -14,7 +14,7 @@ Ce répertoire est dédié à la Détection/Segmentation de toits goudronnés su
 
 Toit avec isolation seule            |  Toit avec isolation repeinte
 :-------------------------:|:-------------------------:
-<img src="https://github.com/vintel38/RoofTop/blob/main/doc/images/heat.png" width="300" /> | <img src="https://github.com/vintel38/RoofTop/blob/main/doc/images/cool.png"  width="300" />
+<img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/heat.png" width="300" /> | <img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/cool.png"  width="300" />
 Images issues de la [brochure](https://coolroof-france.com/wp-content/uploads/2021/05/plaquette_commerciale_en-1.pdf) de la société CoolRoof   
 
 Le pipeline suivant, associé à des images satellites de très hautes résolutions, vise à établir une liste des bâtiments dont le toit pourrait être repeint avec des peintures hautement réflectives. En effet, cette technique permet de renvoyer une grande partie du rayonnement solaire vers l'espace ce qui a pour conséquence, d'après l'entreprise de peinture spéciale, de diminuer la température en surface du toit et en dessous du toit ce qui permet de limiter les effets délétères d'ilôts de chaleur et d'économiser de l'électricité sur le budget alloué à la climatisation. Ce projet est mené rapidement avec comme objectif une soumission à la compétition Copernicus Masters d'ici le 17 juillet 2021. 
