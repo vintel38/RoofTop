@@ -57,6 +57,15 @@ class ModelConfig(Config):
  
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.7
+    
+    # ADDED FROM TRAIN_SHAPES.IPYNB because stuck in first epoch 
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # Reduce training ROIs per image because the images are small and have
+    # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+    TRAIN_ROIS_PER_IMAGE = 32
+    
+    # Use smaller anchors because our image and objects are small
+    RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)  # anchor side in pixels
  
 class InferenceConfig(ModelConfig):
     # Set batch size to 1 since we'll be running inference on
@@ -223,7 +232,7 @@ def train(dataset_train, dataset_val, model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,
+                epochs=10,
                 layers='heads')
  
 def test(model, image_path = None, video_path=None, savedfile=None):
