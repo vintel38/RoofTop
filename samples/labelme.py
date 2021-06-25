@@ -11,7 +11,9 @@ import numpy as np
 import skimage.draw
  
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../..")
+# !!!! DOIT LOCALISER LE DOSSIER QUI CONTIENT LE DOSSIER MRCNN POUR POUVOIR LE CHARGER
+# !!!! ATTENTION AU NOMBRE DE DOSSIER PARENTS 
+ROOT_DIR = os.path.abspath("../")
  
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
@@ -54,7 +56,7 @@ class ModelConfig(Config):
     STEPS_PER_EPOCH = 100
  
     # Skip detections with < 90% confidence
-    # DETECTION_MIN_CONFIDENCE = 0.7
+    DETECTION_MIN_CONFIDENCE = 0.7
  
 class InferenceConfig(ModelConfig):
     # Set batch size to 1 since we'll be running inference on
