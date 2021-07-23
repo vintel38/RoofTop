@@ -39,12 +39,11 @@ def preprocess(repo):
         img_dir = image_dir[i]
         name = img_dir.split('.')[0]
         
-        img = cv2.imread(os.path.join(repo_dir, img_dir))
-        
         # chaque image INRIA de resolution 0.3m est lue puis resize selon les 
         # deux dimensions par un facteur 2 pour atteindre une résolution de 
         # 0.6 m sur les deux dimensions 
         # print(img.shape)
+        img = cv2.imread(os.path.join(repo_dir, img_dir))
         dsize=(int(img.shape[0]/2), int(img.shape[1]/2))
         img_scl = cv2.resize(img, dsize)
         
