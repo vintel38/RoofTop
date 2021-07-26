@@ -357,7 +357,6 @@ if __name__ == '__main__':
             model.load_weights(weights_path, by_name=True)
         # Train or evaluate
         train(dataset_train, dataset_val, model)
-        model.save("my_model.h5")
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
         print(os.getcwd())
