@@ -246,13 +246,14 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         image = skimage.io.imread(args.image)
         # Detect objects
         r = model.detect([image], verbose=1)[0]
+        print(r)
         # Colorful
         import matplotlib.pyplot as plt
         
         _, ax = plt.subplots()
-        visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
-            class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
-            class_names=None,scores=None, show_mask=True, show_bbox=True)
+        visualize.display_instances(image, boxes=r['rois'], masks=r['masks'], 
+            class_ids = r['class_ids'], ax = ax, class_names=['DarkRoof'],scores=None, show_mask=True, show_bbox=True)
+        # class_number=model.config.NUM_CLASSES,
         # Save output
         if savedfile == None:
             file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
