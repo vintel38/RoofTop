@@ -56,7 +56,7 @@ class ModelConfig(Config):
     STEPS_PER_EPOCH = 100
  
     # Skip detections with < 90% confidence
-    DETECTION_MIN_CONFIDENCE = 0.7
+    DETECTION_MIN_CONFIDENCE = 0.5
     
     # ADDED FROM TRAIN_SHAPES.IPYNB because stuck in first epoch 
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
