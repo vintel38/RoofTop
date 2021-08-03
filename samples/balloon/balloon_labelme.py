@@ -303,7 +303,7 @@ if __name__ == '__main__':
  
     # Configurations
     if args.command == "train":
-        config = ModelConfig()
+        config = BalloonConfig()
         dataset_train, dataset_val = LabelmeDataset(), LabelmeDataset()
         dataset_train.load_balloon(args.dataset,"train")
         dataset_val.load_balloon(args.dataset,"val")
