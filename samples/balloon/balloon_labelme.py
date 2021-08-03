@@ -344,9 +344,11 @@ if __name__ == '__main__':
             model.load_weights(weights_path, by_name=True, exclude=[
                 "mrcnn_class_logits", "mrcnn_bbox_fc",
                 "mrcnn_bbox", "mrcnn_mask"])
+                print("Loading weights finished")
         else:
             model.load_weights(weights_path, by_name=True)
         # Train or evaluate
+        print("Start Training !")
         train(dataset_train, dataset_val, model)
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
