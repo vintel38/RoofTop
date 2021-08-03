@@ -304,7 +304,7 @@ if __name__ == '__main__':
     # Configurations
     if args.command == "train":
         config = BalloonConfig()
-        dataset_train, dataset_val = LabelmeDataset(), LabelmeDataset()
+        dataset_train, dataset_val = BalloonDataset(), BalloonDataset()
         dataset_train.load_balloon(args.dataset,"train")
         dataset_val.load_balloon(args.dataset,"val")
         config.NUM_CLASSES = len(dataset_train.class_info)
