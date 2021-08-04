@@ -63,6 +63,8 @@ class InferenceConfig(Config):
     # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
+    NAME = 'balloon'
+    # https://github.com/matterport/Mask_RCNN/issues/709
  
 ############################################################
 #  Dataset (My labelme dataset loader)
