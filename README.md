@@ -30,8 +30,8 @@ La solution proposée dans ce projet utilise donc des images satellites très ha
 
 Finalement, ces coordonnées GPS sont envoyées à l'API de Google Maps qui moyennant finances est capable de vous donner des informations sur ce bâtiments comme l'adresse, le numéro de téléphone ou encore l'adresse mail du contact. Les données tirées de l'API de Google Maps sont alors compilées dans une base de données de type PostGIS qui représente alors la richesse et l'intérêt du projet RoofTop. En effet, les sociétés de peinture, les villes, les agglomérations ont tout intérêt à mettre la main sur une telle base de données qui signifie des économies substantielles en climatisation pour les bâtiments de leurs espaces et une amélioration des conditions de vie de la population avec un combat direct du phénomène d'ilôt de chaleur. 
 
-<object data="http://yoursite.com/the.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="http://yoursite.com/the.pdf">
-        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="http://yoursite.com/the.pdf">Download PDF</a>.</p>
+<object data="https://github.com/vintel38/RoofTop-Project/blob/master/doc/Presentation2.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="https://github.com/vintel38/RoofTop-Project/blob/master/doc/Presentation2.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/vintel38/RoofTop-Project/blob/master/doc/Presentation2.pdf">Download PDF</a>.</p>
     </embed>
 </object>
