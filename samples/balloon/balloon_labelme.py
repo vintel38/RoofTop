@@ -65,6 +65,9 @@ class InferenceConfig(Config):
     IMAGES_PER_GPU = 1
     NAME = 'balloon'
     # https://github.com/matterport/Mask_RCNN/issues/709
+    NUM_CLASSES =  1 +1 
+    # https://github.com/matterport/Mask_RCNN/issues/410
+    
  
 ############################################################
 #  Dataset (My labelme dataset loader)
