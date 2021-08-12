@@ -35,3 +35,5 @@ Finalement, ces coordonnées GPS sont envoyées à l'API de Google Maps qui moye
         <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/vintel38/RoofTop/blob/master/doc/Presentation2.pdf">Download PDF</a>.</p>
     </embed>
 </object>
+
+<img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/cool.png"  width="300" />
