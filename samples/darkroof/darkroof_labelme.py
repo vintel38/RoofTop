@@ -310,8 +310,8 @@ if __name__ == '__main__':
     if args.command == "train":
         config = DarkRoofConfig()
         dataset_train, dataset_val = DarkRoofDataset(), DarkRoofDataset()
-        dataset_train.load_balloon(args.dataset,"train")
-        dataset_val.load_balloon(args.dataset,"val")
+        dataset_train.load_darkroof(args.dataset,"train")
+        dataset_val.load_darkroof(args.dataset,"val")
         config.NUM_CLASSES = len(dataset_train.class_info)
     elif args.command == "test":
         config = InferenceConfig()
