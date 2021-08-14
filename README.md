@@ -28,12 +28,8 @@ Ainsi, si l'élément clé de ce problème est l'aspect radiatif du toit qui est
 
 La solution proposée dans ce projet utilise donc des images satellites très haute résolution (résolution ~ 0.6m) sur des longueurs visibles et infrarouge appelée CNIR (Common - Near InfraRed) qui peuvent traverser l'atmosphère sans trop d'altérations. Des images sur ces longueurs d'ondes intimement liées aux phénomènes thermiques permettent donc d'observer directement la thermodynamique d'objets au sol. L'algorithme de détection/segmentation Mask RCNN est donc théoriquement capable sur ces images de comprendre les implications thermiques sous-jacentes du problème et d'identifier/grouper les pixels qui appartiennent à des toits dont l'isolation externe doit être repeinte. Les images satellites utilisées sont de type GeoTiff avec un format sans perte d'informations sur l'imagerie qui embarque également des données géospatiales. Une fois que les toits sont identifiés individuellement, il devient possible de retrouver précisément leur positionnement GPS via leur position sur l'image et les données géospatiales associées à cette image. 
 
+
+<img src="https://github.com/vintel38/RoofTop/blob/master/doc/prez/3.jpg"  width="700" />
+
 Finalement, ces coordonnées GPS sont envoyées à l'API de Google Maps qui moyennant finances est capable de vous donner des informations sur ce bâtiments comme l'adresse, le numéro de téléphone ou encore l'adresse mail du contact. Les données tirées de l'API de Google Maps sont alors compilées dans une base de données de type PostGIS qui représente alors la richesse et l'intérêt du projet RoofTop. En effet, les sociétés de peinture, les villes, les agglomérations ont tout intérêt à mettre la main sur une telle base de données qui signifie des économies substantielles en climatisation pour les bâtiments de leurs espaces et une amélioration des conditions de vie de la population avec un combat direct du phénomène d'ilôt de chaleur. 
 
-<object data="https://github.com/vintel38/RoofTop/blob/master/doc/Presentation2.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="https://github.com/vintel38/RoofTop/blob/master/doc/Presentation2.pdf">
-        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/vintel38/RoofTop/blob/master/doc/Presentation2.pdf">Download PDF</a>.</p>
-    </embed>
-</object>
-
-<img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/cool.png"  width="300" />
