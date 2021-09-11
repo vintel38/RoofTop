@@ -241,7 +241,8 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         # Read image
         image = skimage.io.imread(args.image)
         # Detect objects
-        r = model.detect([image], verbose=1)[0]
+        r = model.detect([image], verbose=0)[0]
+        # Verbose initially to 1 in the matterport version but put to 0 to avoid print everything 
         # Colorful
         import matplotlib.pyplot as plt
         
@@ -259,6 +260,13 @@ def test(model, image_path = None, video_path=None, savedfile=None):
     elif video_path:
         pass
     print("Saved to ", file_name)
+    print('Bounding Boxes')
+    print(r['rois'])
+    print('Classes')
+    print(r['class_ids'])
+    print('Number of classes')
+    print(model.config.NUM_CLASSES)
+    
  
                 
 ############################################################
