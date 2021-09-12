@@ -260,16 +260,11 @@ def test(model, image_path = None, video_path=None, savedfile=None):
     elif video_path:
         pass
     print("Saved to ", file_name)
-    # print('Bounding Boxes')
-    # print(r['rois'])
-    # print('Classes')
-    # print(r['class_ids'])
-    # print('Number of classes')
-    # print(model.config.NUM_CLASSES)
+
     
 def inference(model, image_path = None, video_path=None, savedfile=None):
     assert image_path or video_path
-    
+ 
      # Image or video?
     if image_path:
         # Run model detection and generate the color splash effect
@@ -287,16 +282,16 @@ def inference(model, image_path = None, video_path=None, savedfile=None):
             class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
             class_names=None,scores=None, show_mask=True, show_bbox=True)
         # Save output
-        #if savedfile == None:
-        #    file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        #else:
-        #    file_name = savedfile
-        #plt.savefig(file_name)
+        if savedfile == None:
+            file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+        else:
+            file_name = savedfile
+        plt.savefig(file_name)
         #skimage.io.imsave(file_name, testresult)
-        plt.show()
     elif video_path:
         pass
-    # print("Saved to ", file_name)
+    print("Saved to ", file_name)
+    return r
     
  
                 
@@ -331,6 +326,9 @@ if __name__ == '__main__':
     parser.add_argument('--classnum', required=False,
                         metavar="class number of your detect model",
                         help="Class number of your detector.")
+    # https://stackoverflow.com/questions/23566970/using-argparse-to-create-output-file
+    parser.add_argument("-o", "--output", required=False,
+                        help="Directs the output to a name of your choice")
     args = parser.parse_args()
  
     # Validate arguments
@@ -415,11 +413,13 @@ if __name__ == '__main__':
         print(os.getcwd())
         # filenames = os.listdir(args.weights)
         # for filename in filenames:
-        for filename in args.weights:
-            if filename.endswith(".h5"):
-                print("Load weights from {filename} ".format(filename=filename))
-                model.load_weights(args.weights,filename,by_name=True)
-                savedfile_name = os.path.splitext(args.image)[0] + "_d.jpg"
-                inference(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+        # for filename in args.weights:
+        if args.weights.endswith(".h5"):
+            print("Load weights from {filename} ".format(filename=args.weights))
+            model.load_weights(args.weights,by_name=True)
+            savedfile_name = os.path.splitext(args.image)[0] + "_d.jpg"
+            r = inference(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+            with open(args.output, 'w') as output_file:
+                output_file.write("%s\n" % r)
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
