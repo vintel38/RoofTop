@@ -260,12 +260,43 @@ def test(model, image_path = None, video_path=None, savedfile=None):
     elif video_path:
         pass
     print("Saved to ", file_name)
-    print('Bounding Boxes')
-    print(r['rois'])
-    print('Classes')
-    print(r['class_ids'])
-    print('Number of classes')
-    print(model.config.NUM_CLASSES)
+    # print('Bounding Boxes')
+    # print(r['rois'])
+    # print('Classes')
+    # print(r['class_ids'])
+    # print('Number of classes')
+    # print(model.config.NUM_CLASSES)
+    
+def inference(model, image_path = None, video_path=None, savedfile=None):
+    assert image_path or video_path
+    
+     # Image or video?
+    if image_path:
+        # Run model detection and generate the color splash effect
+        print("Running on {}".format(args.image))
+        # Read image
+        image = skimage.io.imread(args.image)
+        # Detect objects
+        r = model.detect([image], verbose=0)[0]
+        # Verbose initially to 1 in the matterport version but put to 0 to avoid print everything 
+        # Colorful
+        import matplotlib.pyplot as plt
+        
+        _, ax = plt.subplots()
+        visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
+            class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
+            class_names=None,scores=None, show_mask=True, show_bbox=True)
+        # Save output
+        #if savedfile == None:
+        #    file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+        #else:
+        #    file_name = savedfile
+        #plt.savefig(file_name)
+        #skimage.io.imsave(file_name, testresult)
+        plt.show()
+    elif video_path:
+        pass
+    # print("Saved to ", file_name)
     
  
                 
@@ -280,7 +311,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Mask R-CNN to detect balloons.')
     parser.add_argument("command",
                         metavar="<command>",
-                        help="'train' or 'test'")
+                        help="'train' or 'test' or 'inference'")
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/dataset/",
                         help='Directory of your dataset')
@@ -308,6 +339,9 @@ if __name__ == '__main__':
     elif args.command == "test":
         assert args.image or args.video or args.classnum, \
             "Provide --image or --video and  --classnum of your model to apply testing"
+    elif args.command == "inference":
+        assert args.image or args.video or args.classnum, \
+            "Provide --image or --video and  --classnum of your model to apply inference"
  
  
     print("Weights: ", args.weights)
@@ -322,6 +356,9 @@ if __name__ == '__main__':
         dataset_val.load_darkroof(args.dataset,"val")
         config.NUM_CLASSES = len(dataset_train.class_info)
     elif args.command == "test":
+        config = InferenceConfig()
+        config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
+    elif args.command == "inference":
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
         
@@ -373,5 +410,16 @@ if __name__ == '__main__':
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+    elif args.command == "inference":
+        # we infer with the one weights given as absoute path
+        print(os.getcwd())
+        # filenames = os.listdir(args.weights)
+        # for filename in filenames:
+        for filename in args.weights:
+            if filename.endswith(".h5"):
+                print("Load weights from {filename} ".format(filename=filename))
+                model.load_weights(args.weights,filename,by_name=True)
+                savedfile_name = os.path.splitext(args.image)[0] + "_d.jpg"
+                inference(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
