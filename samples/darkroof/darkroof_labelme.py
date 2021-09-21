@@ -5,7 +5,7 @@
 # import
 import os
 import sys
-import json
+import json, codecs
 import datetime
 import numpy as np
 import skimage.draw
@@ -419,7 +419,9 @@ if __name__ == '__main__':
             model.load_weights(args.weights,by_name=True)
             savedfile_name = os.path.splitext(args.image)[0] + "_d.jpg"
             r = inference(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
-            with open(args.output, 'w') as output_file:
-                output_file.write("%s\n" % r)
+            # without any open files necessary 
+            # https://stackoverflow.com/questions/30811918/saving-dictionary-of-numpy-arrays
+            np.save(args.output, r)
+
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
