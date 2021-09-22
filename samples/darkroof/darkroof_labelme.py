@@ -123,6 +123,7 @@ class DarkRoofDataset(utils.Dataset):
         dataset_dir = os.path.join(dataset_dir, subset)
  
         filenames = os.listdir(dataset_dir)
+        print(filenames)
         jsonfiles,annotations=[],[]
         for filename in filenames:
             if filename.endswith(".json"):
@@ -136,7 +137,7 @@ class DarkRoofDataset(utils.Dataset):
                     continue
                 # you can filter what you don't want to load
                 annotations.append(annotation)
-                
+        print(annotations)        
         print("In {source} {subset} dataset we have {number:d} annotation files."
             .format(source=source, subset=subset,number=len(jsonfiles)))
         print("In {source} {subset} dataset we have {number:d} valid annotations."
@@ -359,6 +360,13 @@ if __name__ == '__main__':
     elif args.command == "inference":
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
+    elif args.command == "eval":
+        print('eval')
+        config = DarkRoofConfig()
+        dataset_val = DarkRoofDataset()
+        dataset_val.load_darkroof(args.dataset,"val")
+        config.NUM_CLASSES = len(dataset_val.class_info)
+        print(config.NUM_CLASSES)
         
     config.display()
  
@@ -427,15 +435,22 @@ if __name__ == '__main__':
             np.save(args.output, r)
             
     elif args.command == "eval":
+        print('olo')
         APs = list(); 
         ARs = list();
         F1_scores = list(); 
+        print(dataset_val.image_ids)
         for image_id in dataset_val.image_ids:
+            print('yolo')
+            print(dataset_val.image_ids)
             image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset_val, cfg, image_id, use_mini_mask=False)
             #image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset, cfg, image_id)
             scaled_image = mold_image(image, cfg)
             sample = expand_dims(scaled_image, 0)
+            print('pre_yolo')
             yhat = model.detect(sample, verbose=0)
+            print('yhat')
+            print(yhat)
             r = yhat[0]
             AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
             AR, positive_ids = compute_recall(r["rois"], gt_bbox, iou=0.2)
@@ -443,9 +458,11 @@ if __name__ == '__main__':
             F1_scores.append((2* (mean(precisions) * mean(recalls)))/(mean(precisions) + mean(recalls)))
             APs.append(AP)
 
-        mAP = mean(APs)
-        mAR = mean(ARs)
-        return mAP, mAR, F1_scores
+        print(APs)
+        print(ARs)
+        #mAP = np.mean(APs)
+        #mAR = np.mean(ARs)
+        #print((mAP, mAR, F1_scores))
     
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
