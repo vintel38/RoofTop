@@ -57,6 +57,33 @@ class DarkRoofConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.9
     
 #############################################################
+
+class DarkRoofEvalConfig(Config):
+    """Configuration for training on the toy  dataset.
+    Derives from the base Config class and overrides some values.
+    """
+    # Give the configuration a recognizable name
+    NAME = "darkroof"
+ 
+    # We use a GPU with 12GB memory, which can fit two images.
+    # Adjust down if you use a smaller GPU.
+    IMAGES_PER_GPU = 1 # 1
+ 
+    # Number of classes (including background)
+    NUM_CLASSES = 1 + 1# Background,
+    # typically after labeled, class can be set from Dataset class
+    # if you want to test your model, better set it corectly based on your trainning dataset
+ 
+    # Number of training steps per epoch
+    STEPS_PER_EPOCH = 100
+ 
+    # Skip detections with < 90% confidence
+    DETECTION_MIN_CONFIDENCE = 0.9
+
+    USE_MINI_MASK = False
+    # https://github.com/matterport/Mask_RCNN/issues/2474
+    
+#############################################################
  
 class InferenceConfig(Config):
     # Set batch size to 1 since we'll be running inference on
@@ -123,7 +150,6 @@ class DarkRoofDataset(utils.Dataset):
         dataset_dir = os.path.join(dataset_dir, subset)
  
         filenames = os.listdir(dataset_dir)
-        print(filenames)
         jsonfiles,annotations=[],[]
         for filename in filenames:
             if filename.endswith(".json"):
@@ -137,7 +163,7 @@ class DarkRoofDataset(utils.Dataset):
                     continue
                 # you can filter what you don't want to load
                 annotations.append(annotation)
-        print(annotations)        
+               
         print("In {source} {subset} dataset we have {number:d} annotation files."
             .format(source=source, subset=subset,number=len(jsonfiles)))
         print("In {source} {subset} dataset we have {number:d} valid annotations."
@@ -361,12 +387,11 @@ if __name__ == '__main__':
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
     elif args.command == "eval":
-        print('eval')
-        config = DarkRoofConfig()
+        config = DarkRoofEvalConfig()
         dataset_val = DarkRoofDataset()
         dataset_val.load_darkroof(args.dataset,"val")
+        dataset_val.prepare()
         config.NUM_CLASSES = len(dataset_val.class_info)
-        print(config.NUM_CLASSES)
         
     config.display()
  
@@ -435,34 +460,34 @@ if __name__ == '__main__':
             np.save(args.output, r)
             
     elif args.command == "eval":
-        print('olo')
+      # https://github.com/matterport/Mask_RCNN/issues/2474
         APs = list(); 
         ARs = list();
-        F1_scores = list(); 
-        print(dataset_val.image_ids)
+        F1_scores = list();
+        model.load_weights(args.weights,by_name=True)
         for image_id in dataset_val.image_ids:
-            print('yolo')
-            print(dataset_val.image_ids)
-            image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset_val, cfg, image_id, use_mini_mask=False)
-            #image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset, cfg, image_id)
-            scaled_image = mold_image(image, cfg)
-            sample = expand_dims(scaled_image, 0)
-            print('pre_yolo')
+            # print(image_id)
+            image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, image_id)
+            scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image
+            sample = np.expand_dims(scaled_image, 0)
             yhat = model.detect(sample, verbose=0)
-            print('yhat')
-            print(yhat)
+            # https://github.com/matterport/Mask_RCNN/issues/1285
             r = yhat[0]
+            #print("gt_bbox {}".format(gt_bbox.shape))
+            #print("gt_class_id {}".format(gt_class_id.shape))
+            #print("gt_mask {}".format(gt_mask.shape))
+            #print("r_bbox {}".format(r["rois"].shape))
+            #print("r_class_id {}".format(r["class_ids"].shape))
+            #print("r_mask {}".format(r["masks"].shape))
             AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
-            AR, positive_ids = compute_recall(r["rois"], gt_bbox, iou=0.2)
+            AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.2)
             ARs.append(AR)
-            F1_scores.append((2* (mean(precisions) * mean(recalls)))/(mean(precisions) + mean(recalls)))
+            F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
             APs.append(AP)
 
-        print(APs)
-        print(ARs)
-        #mAP = np.mean(APs)
-        #mAR = np.mean(ARs)
-        #print((mAP, mAR, F1_scores))
+        mAP = np.mean(APs)
+        mAR = np.mean(ARs)
+        print((mAP, mAR, F1_scores))
     
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
