@@ -13,7 +13,7 @@ def GetExtent(ds):
     width, height = ds.RasterXSize, ds.RasterYSize
     xmax = xmin + width * xpixel
     ymin = ymax + height * ypixel
-    return (xmin, xmax, ymin, ymax), (xpixel, ypixel)
+    return (xmin, xmax, ymin, ymax), np.abs((xpixel, ypixel))
     
     
 def pointing(coord, img_coord, res):
