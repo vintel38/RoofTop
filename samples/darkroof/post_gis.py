@@ -58,9 +58,9 @@ def post_process(img_path, elt):
     pt=[]
     for i in range(masks.shape[-1]):
         y_center, x_center = np.argwhere(masks[:,:,i]==1).sum(0)/(masks[:,:,i] == 1).sum()
-        print((x_center, y_center))
+        # print((x_center, y_center))
         point = pointing((x_center, y_center), ext[0], ext[1])
-        print(point)
+        # print(point)
         pt.append(point)
         
     reproj = ReprojectCoords(pt, src_srs, tgt_srs)
