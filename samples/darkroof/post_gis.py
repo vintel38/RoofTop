@@ -3,7 +3,7 @@
 
 # import 
 import os 
-import numpy 
+import numpy as np
 from osgeo import gdal,ogr,osr
 
 
