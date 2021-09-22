@@ -13,7 +13,7 @@ def GetExtent(ds):
     width, height = ds.RasterXSize, ds.RasterYSize
     xmax = xmin + width * xpixel
     ymin = ymax + height * ypixel
-    return xmin, xmax, ymin, ymax, xpixel, ypixel
+    return (xmin, xmax, ymin, ymax), (xpixel, ypixel)
     
     
 def pointing(coord, img_coord, res):
@@ -58,7 +58,8 @@ def post_process(img_path, elt):
     pt=[]
     for i in range(masks.shape[-1]):
         y_center, x_center = np.argwhere(masks[:,:,i]==1).sum(0)/(masks[:,:,i] == 1).sum()
-        point = pointing((x_center, y_center), ext[0:4], ext[4:6])
+        print((x_center, y_center))
+        point = pointing((x_center, y_center), ext[0], ext[1])
         print(point)
         pt.append(point)
         
