@@ -385,6 +385,7 @@ if __name__ == '__main__':
  
     # Load weights
     print("Loading weights ", weights_path)
+    
     if args.command == "train":
         if args.weights.lower() == "coco":
             # Exclude the last layers because they require a matching
@@ -398,6 +399,7 @@ if __name__ == '__main__':
         # Train or evaluate
         print("Start Training !")
         train(dataset_train, dataset_val, model)
+        
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
         print(os.getcwd())
@@ -408,6 +410,7 @@ if __name__ == '__main__':
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+                
     elif args.command == "inference":
         # we infer with the one weights given as absoute path
         print(os.getcwd())
@@ -422,6 +425,27 @@ if __name__ == '__main__':
             # without any open files necessary 
             # https://stackoverflow.com/questions/30811918/saving-dictionary-of-numpy-arrays
             np.save(args.output, r)
+            
+    elif args.command == "eval":
+        APs = list(); 
+        ARs = list();
+        F1_scores = list(); 
+        for image_id in dataset_val.image_ids:
+            image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset_val, cfg, image_id, use_mini_mask=False)
+            #image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(dataset, cfg, image_id)
+            scaled_image = mold_image(image, cfg)
+            sample = expand_dims(scaled_image, 0)
+            yhat = model.detect(sample, verbose=0)
+            r = yhat[0]
+            AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+            AR, positive_ids = compute_recall(r["rois"], gt_bbox, iou=0.2)
+            ARs.append(AR)
+            F1_scores.append((2* (mean(precisions) * mean(recalls)))/(mean(precisions) + mean(recalls)))
+            APs.append(AP)
 
+        mAP = mean(APs)
+        mAR = mean(ARs)
+        return mAP, mAR, F1_scores
+    
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
