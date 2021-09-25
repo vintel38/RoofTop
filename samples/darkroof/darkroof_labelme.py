@@ -487,7 +487,7 @@ if __name__ == '__main__':
 
         mAP = np.mean(APs)
         mAR = np.mean(ARs)
-        print((mAP, mAR, F1_scores))
+        print("mAP is {:. 3f}, mAR is {:. 3f} and F1_scores are {:. 3f}".format(mAP, mAR, F1_scores))
     
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
