@@ -389,7 +389,7 @@ if __name__ == '__main__':
     elif args.command == "eval":
         config = DarkRoofEvalConfig()
         dataset_val = DarkRoofDataset()
-        dataset_val.load_darkroof(args.dataset,"val")
+        dataset_val.load_darkroof(args.dataset,"test")
         dataset_val.prepare()
         config.NUM_CLASSES = len(dataset_val.class_info)
         
