@@ -1,6 +1,6 @@
-# The RoofTop project : A satellite imagery and ML application fighting against climate change
+# The RoofTop project : A satellite imagery and ML app fighting against climate change
 
-In this article, I am going to present you a simple and thorough solution that I developed during my participation at Copernicus Masters 2021 organized by ESA. This hackathon promotes satellite imagery utilization by asking for concepts fighting against climate change. If satellite imagery or AI means nothing to you do not worry, it was the same for me at the beginning of 2021! Ready? Off we go!
+In this article, I am going to present you a simple and thorough solution that I developed during my participation at Copernicus Masters 2021 organized by ESA. This hackathon promotes satellite imagery utilization by asking for concepts fighting against climate change. While using Mask-RCNN on imagery, the solution is able to locate buildings with dark roof which feed heat island phenomenon. 
 
 <img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/CM.png"  width="700" />
 
@@ -12,8 +12,8 @@ Without the covid pandemic, I would never have participated in this competition.
 
 While scrolling on Facebook, only one video from [Loopsider](https://www.facebook.com/Loopsider/videos/500691364579511/) was enough for me to design the RoofTop pipeline. This short video presents a Breton start-up that started recently to paint roof with a reflective white painting, as Americans and Greeks have been doing for some time, to reflect solar rays. Through my two masters, my major stayed energetics but this solution was ridiculously confusing to me. If you don't want a premise to heat up, do not let heat enter it! I will explain in the next part the thermal principle. Because roofs are often flat and facing the sky, they can be observed by artificial satellites placed where comes the problem, ie solar rays. 
 
-<img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/chicago12_01.tif"  width="700" />
-Airborne very high resolution imagery of Chicago suburb from INRIA Aerial Image Labeling Dataset
+<img src="https://github.com/vintel38/RoofTop/blob/master/doc/images/chicago12_01.png"  width="700" />
+Airborne very high resolution imagery of Chicago suburb from [Inria Aerial Image Labeling Dataset](https://project.inria.fr/aerialimagelabeling/)
 
 Without thinking twice, I decided I will detect building dark roofs on very high-resolution imagery using Machine Learning algorithms. What is important to understand is the fact that this project does not limit itself to just a technical product but is a full package project. Clients and partners can be easily described and it gives key arguments to foster the process against the shadow competitor. Let me explain this in the next chapter.
 
@@ -39,7 +39,7 @@ The pipeline is eventually "pretty" simple with respect to the task it is solvin
 
 <img src="https://github.com/vintel38/RoofTop/blob/master/doc/prez/3.jpg"  width="700" />
 
--Very high-resolution satellite imagery provided by space suppliers is ready-to-use, ie every atmospheric correction is already applied. During training, I am using Inria Aerial Image Labeling Dataset to get a sufficient amount of VHR training set.
+-Very high-resolution satellite imagery provided by space suppliers is ready-to-use, ie every atmospheric correction is already applied. During training, I am using [Inria Aerial Image Labeling Dataset](https://project.inria.fr/aerialimagelabeling/) to get a sufficient amount of VHR training set.
 - Imagery is then pre-processed and formatted to be fed correctly to the Mask RCNN algorithm. More specifically, imagery resolution is decreased to 0.6 ground meter/pixel and is cut to only have square imagery of 1024 px side. Each step is performed using the GDAL library to preserve geospatial metadata embedded in the dataset *.tif* files.
 - Preprocessed and split data into train/val/test subsets are then fed to the Mask RCNN Matterport algorithm. I chose it because it is one of the most efficient algorithm in the field of object detection/instance segmentation at the time being. This computer vision algorithm enables to detect (individually identify) specific elements of a picture and associates to these elements the pixels they belong to. Later, it will enable to estimate the roof surface to be white-painted. Using the image geospatial info, it is possible to compute the global GPS coordinates of each roof identified with its longitude and latitude.
 - Each pair *(longitude, latitude)* is sent to the Google Maps API to be converted into addresses using reverse geocoding functionality. Information sent back by the API is then processed and stored in a PostGIS database to have a robust and flexible tool. Other API functionalities can be used to get more detailed information on the buildings like contact information.
@@ -50,6 +50,6 @@ Training is performed on a Google Colab session using a 12GB GPU even if I am co
 
 At present, I have been able to test the pipeline on a few unseen images and the first results are quite encouraging. Even if some buildings are still not detected on 0.37 km^2 tiles, major building roofs are correctly identified by the AI and precisely located by the Google Maps API. Contrarily to the hackathon slide, TRL is currently more 6 than 5 because all pipeline is starting to perform well. For the data scientists among you, I am continuing to annotate tiles to boost pipeline performances to improve mAP and mAR of Mask RCNN.
 
-The Copernicus Masters 2021 must deliberate in the next few weeks. On my side, I have already started to prospect potential incubators in the Aix-Marseille (FR) area which could host my project taking into account my professional constraints. My wish for the future of this project is to continue to add functionality and tools to fight against climate change from literature to end up with a complete SaaS solution to be proposed to development actors in a B2C or B2B business model. It would be a compromise between the know-how of a Kermap and the sense of innovation of a SpaceSense.
+The Copernicus Masters 2021 did not retain my project as the business model was not clear enough. On my side, I have already started to prospect potential incubators in the Aix-Marseille (FR) area which could host my project taking into account my professional constraints. My wish for the future of this project is to continue to add functionality and tools to fight against climate change from literature to end up with a complete SaaS solution to be proposed to development actors in a B2C or B2B business model. It would be a compromise between the know-how of a Kermap and the sense of innovation of a SpaceSense.
 
-Keep in touch on my [LinkedIn](https://www.linkedin.com/in/vincent-arrigoni-8a80ba141/) for more deeptech projects. Find me on [UpWork](https://www.upwork.com/o/profiles/users/~01a4ac604eff45e6ae/) for your freelance work in computer vision. 
+Keep in touch on my [LinkedIn](https://www.linkedin.com/in/vincent-arrigoni-8a80ba141/) and [Github](https://github.com/vintel38) for more deeptech projects. Find me on [UpWork](https://www.upwork.com/o/profiles/users/~01a4ac604eff45e6ae/) for your freelance work in computer vision. 
