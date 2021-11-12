@@ -137,8 +137,8 @@ class CellsDataset(utils.Dataset):
                 # # you can filter what you don't want to load
                 # annotations.append(annotation)
                 
-        # print("In {source} {subset} dataset we have {number:d} annotation files."
-            # .format(source=source, subset=subset,number=len(jsonfiles)))
+        print("In {source} {subset} dataset we have {number:d} annotation files."
+            .format(source=source, subset=subset,number=len(filenames)))
         # print("In {source} {subset} dataset we have {number:d} valid annotations."
             # .format(source=source, subset=subset,number=len(annotations)))
  
@@ -180,7 +180,7 @@ class CellsDataset(utils.Dataset):
                 width=width, height=height, classids=classids) # shapes=shapes,
  
         print("In {source} {subset} dataset we have {number:d} class item"
-            .format(source=source, subset=subset,number=len(labelslist)))
+            .format(source=source, subset=subset,number=len(classes)))
         
         labelslist = classes
         for labelid, labelname in enumerate(labelslist):
