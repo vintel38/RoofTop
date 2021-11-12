@@ -137,10 +137,8 @@ class CellsDataset(utils.Dataset):
                 # # you can filter what you don't want to load
                 # annotations.append(annotation)
                 
-            print("In {source} {subset} dataset we have {number:d} annotation files."
-                .format(source=source, subset=subset,number=len(filenames)))
-        # print("In {source} {subset} dataset we have {number:d} valid annotations."
-            # .format(source=source, subset=subset,number=len(annotations)))
+
+
  
         # Add images and get all classes in annotation files
         # typically, after labelme's annotation, all same class item have a same name
@@ -178,8 +176,12 @@ class CellsDataset(utils.Dataset):
                 image_id=filename,  # use file name as a unique image id
                 path=os.path.join(dataset_dir,filename),
                 width=width, height=height, classids=classids) # shapes=shapes,
- 
-        print("In {source} {subset} dataset we have {number:d} class item"
+                
+        print("In {source} {subset} dataset we have {number:d} valid images."
+            .format(source=source, subset=subset,number=len(filenames)))
+        print("In {source} {subset} dataset we have {number:d} annotation files"
+            .format(source=source, subset=subset,number=len(train_data['id'])))
+        print("In {source} {subset} dataset we have {number:d} class item."
             .format(source=source, subset=subset,number=len(classes)))
         
         labelslist = classes
