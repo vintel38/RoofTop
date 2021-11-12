@@ -46,7 +46,7 @@ class CellsConfig(Config):
     IMAGES_PER_GPU = 2 # 1
  
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 1# Background,
+    NUM_CLASSES = 3 + 1# Background,
     # typically after labeled, class can be set from Dataset class
     # if you want to test your model, better set it corectly based on your trainning dataset
  
@@ -65,7 +65,7 @@ class InferenceConfig(Config):
     IMAGES_PER_GPU = 1
     NAME = 'cells'
     # https://github.com/matterport/Mask_RCNN/issues/709
-    NUM_CLASSES =  1 +1 
+    NUM_CLASSES =  3 +1 
     # https://github.com/matterport/Mask_RCNN/issues/410
     
  
@@ -109,7 +109,7 @@ class CellsDataset(utils.Dataset):
     #   "imageWidth": 2048
     # }
     # We mostly care about the x and y coordinates of each region
-    def load_cells(self, dataset_dir, subset):
+    def load_cells(self, dataset_dir, subset, train_data, classes, height, width):
         """
         Load a subset of the dataset.
         source: coustomed source id, exp: load data from coco, than set it "coco",
@@ -125,57 +125,64 @@ class CellsDataset(utils.Dataset):
         filenames = os.listdir(dataset_dir)
         jsonfiles,annotations=[],[]
         for filename in filenames:
-            if filename.endswith(".json"):
-                jsonfiles.append(filename)
-                annotation = json.load(open(os.path.join(dataset_dir,filename)))
-                # Insure this picture is in this dataset
-                imagename = annotation['imagePath']
-                if not os.path.isfile(os.path.join(dataset_dir,imagename)):
-                    continue
-                if len(annotation["shapes"]) == 0:
-                    continue
-                # you can filter what you don't want to load
-                annotations.append(annotation)
+            # if filename.endswith(".json"):
+                # jsonfiles.append(filename)
+                # annotation = json.load(open(os.path.join(dataset_dir,filename)))
+                # # Insure this picture is in this dataset
+                # imagename = annotation['imagePath']
+                # if not os.path.isfile(os.path.join(dataset_dir,imagename)):
+                    # continue
+                # if len(annotation["shapes"]) == 0:
+                    # continue
+                # # you can filter what you don't want to load
+                # annotations.append(annotation)
                 
-        print("In {source} {subset} dataset we have {number:d} annotation files."
-            .format(source=source, subset=subset,number=len(jsonfiles)))
-        print("In {source} {subset} dataset we have {number:d} valid annotations."
-            .format(source=source, subset=subset,number=len(annotations)))
+        # print("In {source} {subset} dataset we have {number:d} annotation files."
+            # .format(source=source, subset=subset,number=len(jsonfiles)))
+        # print("In {source} {subset} dataset we have {number:d} valid annotations."
+            # .format(source=source, subset=subset,number=len(annotations)))
  
         # Add images and get all classes in annotation files
         # typically, after labelme's annotation, all same class item have a same name
         # this need us to annotate like all "ball" in picture named "ball"
         # not "ball_1" "ball_2" ...
         # we also can figure out which "ball" it is refer to.
-        labelslist = []
-        for annotation in annotations:
+        # labelslist = []
+        
+            file_name = filename.split('.')[0]
+        # 1 annotation file per image !!!! 
+        # for annotation in annotations:
             # Get the x, y coordinaets of points of the polygons that make up
             # the outline of each object instance. These are stores in the
             # shape_attributes (see json format above)
-            shapes = [] 
+            # shapes = [] 
             classids = []
  
-            for shape in annotation["shapes"]:
-                # first we get the shape classid
-                label = shape["label"]
-                if labelslist.count(label) == 0:
-                    labelslist.append(label)
-                classids.append(labelslist.index(label)+1)
-                shapes.append(shape["points"])
+            # for shape in annotation["shapes"]:
+                # # first we get the shape classid
+                # label = shape["label"]
+                # if labelslist.count(label) == 0:
+                    # labelslist.append(label)
+                # classids.append(labelslist.index(label)+1)
+                # # shapes.append(shape["points"])
+            
+            for idx, boole in enumerate(train_data['id'] == file_name):
+                if boole:
+                    classids.append(classes.index(train_data['cell_type'][idx]))
             
             # load_mask() needs the image size to convert polygons to masks.
-            width = annotation["imageWidth"]
-            height = annotation["imageHeight"]
+            width = width
+            height = height
             self.add_image(
                 source,
-                image_id=annotation["imagePath"],  # use file name as a unique image id
-                path=os.path.join(dataset_dir,annotation["imagePath"]),
-                width=width, height=height,
-                shapes=shapes, classids=classids)
+                image_id=filename,  # use file name as a unique image id
+                path=os.path.join(dataset_dir,filename),
+                width=width, height=height, classids=classids) # shapes=shapes,
  
         print("In {source} {subset} dataset we have {number:d} class item"
             .format(source=source, subset=subset,number=len(labelslist)))
- 
+        
+        labelslist = classes
         for labelid, labelname in enumerate(labelslist):
             self.add_class(source,labelid,labelname)
  
