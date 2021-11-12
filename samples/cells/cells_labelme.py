@@ -137,8 +137,8 @@ class CellsDataset(utils.Dataset):
                 # # you can filter what you don't want to load
                 # annotations.append(annotation)
                 
-        print("In {source} {subset} dataset we have {number:d} annotation files."
-            .format(source=source, subset=subset,number=len(filenames)))
+            print("In {source} {subset} dataset we have {number:d} annotation files."
+                .format(source=source, subset=subset,number=len(filenames)))
         # print("In {source} {subset} dataset we have {number:d} valid annotations."
             # .format(source=source, subset=subset,number=len(annotations)))
  
