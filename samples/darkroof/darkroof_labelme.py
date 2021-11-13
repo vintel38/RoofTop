@@ -243,7 +243,7 @@ class DarkRoofDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
  
  
-def train(dataset_train, dataset_val, model):
+def train(dataset_train, dataset_val, model, augmentation):
     """Train the model."""
     # Training dataset.
     dataset_train.prepare()
@@ -256,7 +256,8 @@ def train(dataset_train, dataset_val, model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=10,
-                layers='heads')
+                layers='heads', 
+                augmentation=augmentation)
 
 def test(model, image_path = None, video_path=None, savedfile=None):
     assert image_path or video_path
@@ -429,9 +430,15 @@ if __name__ == '__main__':
             print("Loading weights finished")
         else:
             model.load_weights(weights_path, by_name=True)
-        # Train or evaluate
+        # DA Data Augmentation
+        augmentation = imgaug.augmenters.Sometimes(0.5, [
+            imgaug.augmenters.Fliplr(0.5),
+            imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
+            ])
+        
+        # Train
         print("Start Training !")
-        train(dataset_train, dataset_val, model)
+        train(dataset_train, dataset_val, model, augmentation)
         
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
@@ -468,7 +475,7 @@ if __name__ == '__main__':
         for image_id in dataset_val.image_ids:
             # print(image_id)
             image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, image_id)
-            scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image
+            scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image : substract mean pixels to main image
             sample = np.expand_dims(scaled_image, 0)
             yhat = model.detect(sample, verbose=0)
             # https://github.com/matterport/Mask_RCNN/issues/1285
@@ -487,7 +494,7 @@ if __name__ == '__main__':
 
         mAP = np.mean(APs)
         mAR = np.mean(ARs)
-        print("mAP is {:. 3f}, mAR is {:. 3f} and F1_scores are {:. 3f}".format(mAP, mAR, F1_scores))
+        print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
     
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
