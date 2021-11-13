@@ -146,7 +146,7 @@ class DarkRoofDataset(utils.Dataset):
         subset: Subset to load: train or val
         """
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val", "test"]
         dataset_dir = os.path.join(dataset_dir, subset)
  
         filenames = os.listdir(dataset_dir)
