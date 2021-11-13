@@ -9,6 +9,7 @@ import json, codecs
 import datetime
 import numpy as np
 import skimage.draw
+import imgaug
  
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
