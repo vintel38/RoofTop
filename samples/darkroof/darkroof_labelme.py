@@ -354,6 +354,9 @@ if __name__ == '__main__':
     parser.add_argument('--classnum', required=False,
                         metavar="class number of your detect model",
                         help="Class number of your detector.")
+    parser.add_argument('--DA', required=False,
+                        metavar="Data Augmentation?",
+                        help="Do you want imgau on the training phase?")
     # https://stackoverflow.com/questions/23566970/using-argparse-to-create-output-file
     parser.add_argument("-o", "--output", required=False,
                         help="Directs the output to a name of your choice")
@@ -430,11 +433,13 @@ if __name__ == '__main__':
             print("Loading weights finished")
         else:
             model.load_weights(weights_path, by_name=True)
+            
         # DA Data Augmentation
-        augmentation = imgaug.augmenters.Sometimes(0.5, [
-            imgaug.augmenters.Fliplr(0.5),
-            imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
-            ])
+        if args.DA:        
+            augmentation = imgaug.augmenters.Sometimes(0.5, [
+                imgaug.augmenters.Fliplr(0.5),
+                imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
+                ])
         
         # Train
         print("Start Training !")
