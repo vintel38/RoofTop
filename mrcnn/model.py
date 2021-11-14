@@ -1245,6 +1245,8 @@ def load_image_gt(dataset, config, image_id, augmentation=None):
     # This requires the imgaug lib (https://github.com/aleju/imgaug)
     if augmentation:
         import imgaug
+        
+        # print("{} annotated images before data augmentation".format(dataset))
 
         # Augmenters that are safe to apply to masks
         # Some, such as Affine, have settings that make them unsafe, so always
