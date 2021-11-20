@@ -1714,12 +1714,18 @@ class DataGenerator(KU.Sequence):
 
             if self.shuffle and image_index == 0:
                 np.random.shuffle(self.image_ids)
-
+                  
+            # Data Augmentation decision
+            if augmentation != None:
+                True
+                
+                
             # Get GT bounding boxes and masks for image.
             image_id = self.image_ids[image_index]
             image, image_meta, gt_class_ids, gt_boxes, gt_masks = \
                 load_image_gt(self.dataset, self.config, image_id,
                               augmentation=self.augmentation)
+            
 
             # Skip images that have no instances. This can happen in cases
             # where we train on a subset of classes and the image doesn't

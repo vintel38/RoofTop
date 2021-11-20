@@ -11,6 +11,7 @@ import numpy as np
 import skimage.draw
 import imgaug
 import cv2
+from tqdm import tqdm
  
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
@@ -208,7 +209,7 @@ class DarkRoofDataset(utils.Dataset):
         for labelid, labelname in enumerate(labelslist):
             self.add_class(source,labelid,labelname)
             
-    def load_INRIA(self, dataset_dir, subset):
+    def load_INRIA(self, dataset_dir, subset, config):
         """
         Load a subset of the INRIA dataset. Semantic segmentation with only one class. 
         source: coustomed source id, exp: load data from coco, than set it "coco",
@@ -219,57 +220,39 @@ class DarkRoofDataset(utils.Dataset):
         """
         # Train or validation dataset?
         assert subset in ["train", "test"]
-        dataset_dir = os.path.join(dataset_dir, subset, 'images')
+        images_dir = os.path.join(dataset_dir, subset, 'images')
+        contours_dir = os.path.join(dataset_dir, subset, 'gt')
  
-        filenames = os.listdir(dataset_dir)
-        # jsonfiles,annotations=[],[]
-        # for filename in filenames:
-            # if filename.endswith(".json"):
-                # jsonfiles.append(filename)
-                # annotation = json.load(open(os.path.join(dataset_dir,filename)))
-                # # Insure this picture is in this dataset
-                # imagename = annotation['imagePath']
-                # if not os.path.isfile(os.path.join(dataset_dir,imagename)):
-                    # continue
-                # if len(annotation["shapes"]) == 0:
-                    # continue
-                # # you can filter what you don't want to load
-                # annotations.append(annotation)
-               
-        # print("In {source} {subset} dataset we have {number:d} annotation files."
-            # .format(source=source, subset=subset,number=len(jsonfiles)))
-        # print("In {source} {subset} dataset we have {number:d} valid annotations."
-            # .format(source=source, subset=subset,number=len(annotations)))
-        # annotation contain the all annotation
-            
-        # Add images and get all classes in annotation files
-        # typically, after labelme's annotation, all same class item have a same name
-        # this need us to annotate like all "ball" in picture named "ball"
-        # not "ball_1" "ball_2" ...
-        # we also can figure out which "ball" it is refer to.
+        filenames = os.listdir(images_dir)
         labelslist = ['building']
-        for file_name in filenames:
-        
+        for file_name in tqdm(filenames, desc='filenames'):
+            
+            
+            # Check if the contours image exists
+            if not os.path.exists(os.path.join(contours_dir, file_name)):
+                continue
+            
             # Get the x, y coordinaets of points of the polygons that make up
             # the outline of each object instance. These are stores in the
             # shape_attributes (see json format above)
             # shapes = [] 
             classids = []
         
-            im = cv2.imread(os.path.join(dataset_dir,file_name))
+            im = cv2.imread(os.path.join(contours_dir,file_name))
             imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             
             _, thresh = cv2.threshold(imgray, 127, 255, 0)
-            contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             
-            # for _ in contours:
-                # # first we get the shape classid
-                # label = 'building'
-                # #if labelslist.count(label) == 0:
-                # #    labelslist.append(label)
-                # classids.append(labelslist.index(label)+1)
-                # #shapes.append(shape["points"])
-            classids = [1 for _ in range(len(contours))]
+            # it will also limit the number of building perimeter to the first config.MAX_GT_INSTANCES*1.5 instances
+            # interested only in building whose surface exceeds 100 m2
+            building_p=[]
+            # print(np.random.choice(np.arange(len(contours)), int(config.MAX_GT_INSTANCES*1.5), replace=False))
+            for idx in np.random.choice(np.arange(len(contours)), int(config.MAX_GT_INSTANCES*1.5), replace=True):
+                area = cv2.contourArea(contours[idx])*0.09
+                if area > 100:
+                    building_p.append(contours[idx])
+            classids = [1 for _ in range(len(building_p))]
             
             # load_mask() needs the image size to convert polygons to masks.
             width = 5000
@@ -277,9 +260,9 @@ class DarkRoofDataset(utils.Dataset):
             self.add_image(
                 source,
                 image_id=file_name,  # use file name as a unique image id
-                path=os.path.join(dataset_dir,file_name),
+                path=os.path.join(images_dir,file_name),
                 width=width, height=height,
-                shapes=contours, classids=classids)
+                shapes=building_p, classids=classids)
             ### FUNCTION AVAILABLE IN PACKAGE UTILS.PY
  
         print("In {source} {subset} dataset we have {number:d} class item"
@@ -288,7 +271,7 @@ class DarkRoofDataset(utils.Dataset):
         for labelid, labelname in enumerate(labelslist):
             self.add_class(source,labelid,labelname)
  
-    def load_mask(self,image_id):
+    def load_masked(self,image_id):
         """
         LOAD_MASK FUNCTION USED IN TRAIN FUNCTION
         Generate instance masks for an image.
@@ -317,9 +300,10 @@ class DarkRoofDataset(utils.Dataset):
         # one class ID only, we return an array of 1s
         return masks_np, classids_np
         
-    def load_mask_INRIA(self,image_id):
+    def load_mask(self,image_id):
         """
-        LOAD_MASK FUNCTION USED IN TRAIN FUNCTION
+        TYPO LOAD MASK INRIA
+        LOAD_MASK FUNCTION USED IN TRAIN FUNCTION, MODEL_TRAIN, data_generator, load_image_gt
         Generate instance masks for an image.
        Returns:
         masks: A bool array of shape [height, width, instance count] with one mask per instance.
@@ -336,8 +320,12 @@ class DarkRoofDataset(utils.Dataset):
         mask = np.zeros([info["height"], info["width"], len(info["shapes"])], dtype=np.uint8)
         #printsx,printsy=zip(*points)
         for idx, points in enumerate(info["shapes"]):
+            # print(info["shapes"])
+            #if idx==0:
+            #    print(points)
+            #    print(points[:,0])
             # Get indexes of pixels inside the polygon and set them to 1
-            pointsx,pointsy = zip(*points)
+            pointsy,pointsx = zip(*points[:,0])
             rr, cc = skimage.draw.polygon(pointsx, pointsy)
             mask[rr, cc, idx] = 1
         masks_np = mask.astype(np.bool)
@@ -362,7 +350,6 @@ def train(dataset_train, dataset_val, model, augmentation):
  
     # Validation dataset
     dataset_val.prepare()
-    ### FUNCTIONS PREPARE AVAILABLE IN PACKAGE UTILS.PY 
  
     # *** This training schedule is an example. Update to your needs ***
     print("Training network heads")
@@ -500,8 +487,8 @@ if __name__ == '__main__':
     elif args.command == "train_INRIA":
         config = DarkRoofConfig()
         dataset_train, dataset_val = DarkRoofDataset(), DarkRoofDataset()
-        dataset_train.load_INRIA(args.dataset,"train")
-        dataset_val.load_INRIA(args.dataset,"val")
+        dataset_train.load_INRIA(args.dataset,"train", config)
+        dataset_val.load_INRIA(args.dataset,"val", config)
         config.NUM_CLASSES = len(dataset_train.class_info)
     elif args.command == "test":
         config = InferenceConfig()
