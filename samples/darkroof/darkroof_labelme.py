@@ -271,7 +271,7 @@ class DarkRoofDataset(utils.Dataset):
         for labelid, labelname in enumerate(labelslist):
             self.add_class(source,labelid,labelname)
  
-    def load_masked(self,image_id):
+    def load_mask(self,image_id):
         """
         LOAD_MASK FUNCTION USED IN TRAIN FUNCTION
         Generate instance masks for an image.
@@ -300,7 +300,7 @@ class DarkRoofDataset(utils.Dataset):
         # one class ID only, we return an array of 1s
         return masks_np, classids_np
         
-    def load_mask(self,image_id):
+    def load_masked(self,image_id):
         """
         TYPO LOAD MASK INRIA
         LOAD_MASK FUNCTION USED IN TRAIN FUNCTION, MODEL_TRAIN, data_generator, load_image_gt
