@@ -32,7 +32,7 @@ from mrcnn import utils
 #  Visualization
 ############################################################
 
-def display_images(images, titles=None, cols=4, cmap=None, norm=None,
+def display_images(images, titles=None, cols=2, cmap=None, norm=None,
                    interpolation=None):
     """Display the given set of images, optionally with titles.
     images: list or array of image tensors in HWC format.
@@ -355,7 +355,7 @@ def draw_box(image, box, color):
     return image
 
 
-def display_top_masks(image, mask, class_ids, class_names, limit=4):
+def display_top_masks(image, mask, class_ids, class_names, limit=1):
     """Display the given image and the top few class masks."""
     to_display = []
     titles = []
