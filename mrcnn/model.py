@@ -1716,8 +1716,8 @@ class DataGenerator(KU.Sequence):
                 np.random.shuffle(self.image_ids)
                   
             # Data Augmentation decision
-            if augmentation != None:
-                True
+            #if augmentation != True:
+            #    True
                 
                 
             # Get GT bounding boxes and masks for image.
