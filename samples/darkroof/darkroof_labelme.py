@@ -208,68 +208,6 @@ class DarkRoofDataset(utils.Dataset):
  
         for labelid, labelname in enumerate(labelslist):
             self.add_class(source,labelid,labelname)
-            
-    def load_INRIA(self, dataset_dir, subset, config):
-        """
-        Load a subset of the INRIA dataset. Semantic segmentation with only one class. 
-        source: coustomed source id, exp: load data from coco, than set it "coco",
-                it is useful when you ues different dataset for one trainning.(TODO)
-                see the prepare func in utils model for details
-        dataset_dir: Root directory of the dataset.
-        subset: Subset to load: train or val
-        """
-        # Train or validation dataset?
-        assert subset in ["train", "test"]
-        images_dir = os.path.join(dataset_dir, subset, 'images')
-        contours_dir = os.path.join(dataset_dir, subset, 'gt')
- 
-        filenames = os.listdir(images_dir)
-        labelslist = ['building']
-        for file_name in tqdm(filenames, desc='filenames'):
-            
-            
-            # Check if the contours image exists
-            if not os.path.exists(os.path.join(contours_dir, file_name)):
-                continue
-            
-            # Get the x, y coordinaets of points of the polygons that make up
-            # the outline of each object instance. These are stores in the
-            # shape_attributes (see json format above)
-            # shapes = [] 
-            classids = []
-        
-            im = cv2.imread(os.path.join(contours_dir,file_name))
-            imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-            
-            _, thresh = cv2.threshold(imgray, 127, 255, 0)
-            contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            
-            # it will also limit the number of building perimeter to the first config.MAX_GT_INSTANCES*1.5 instances
-            # interested only in building whose surface exceeds 100 m2
-            building_p=[]
-            # print(np.random.choice(np.arange(len(contours)), int(config.MAX_GT_INSTANCES*1.5), replace=False))
-            for idx in np.random.choice(np.arange(len(contours)), int(config.MAX_GT_INSTANCES*1.5), replace=True):
-                area = cv2.contourArea(contours[idx])*0.09
-                if area > 100:
-                    building_p.append(contours[idx])
-            classids = [1 for _ in range(len(building_p))]
-            
-            # load_mask() needs the image size to convert polygons to masks.
-            width = 5000
-            height = 5000
-            self.add_image(
-                source,
-                image_id=file_name,  # use file name as a unique image id
-                path=os.path.join(images_dir,file_name),
-                width=width, height=height,
-                shapes=building_p, classids=classids)
-            ### FUNCTION AVAILABLE IN PACKAGE UTILS.PY
- 
-        print("In {source} {subset} dataset we have {number:d} class item"
-            .format(source=source, subset=subset,number=len(labelslist)))
- 
-        for labelid, labelname in enumerate(labelslist):
-            self.add_class(source,labelid,labelname)
  
     def load_mask(self,image_id):
         """
@@ -292,40 +230,6 @@ class DarkRoofDataset(utils.Dataset):
         for idx, points in enumerate(info["shapes"]):
             # Get indexes of pixels inside the polygon and set them to 1
             pointsy,pointsx = zip(*points)
-            rr, cc = skimage.draw.polygon(pointsx, pointsy)
-            mask[rr, cc, idx] = 1
-        masks_np = mask.astype(np.bool)
-        classids_np = np.array(image_info["classids"]).astype(np.int32)
-        # Return mask, and array of class IDs of each instance. Since we have
-        # one class ID only, we return an array of 1s
-        return masks_np, classids_np
-        
-    def load_masked(self,image_id):
-        """
-        TYPO LOAD MASK INRIA
-        LOAD_MASK FUNCTION USED IN TRAIN FUNCTION, MODEL_TRAIN, data_generator, load_image_gt
-        Generate instance masks for an image.
-       Returns:
-        masks: A bool array of shape [height, width, instance count] with one mask per instance.
-        class_ids: a 1D array of class IDs of the instance masks.
-        """
-        # If not the source dataset you want, delegate to parent class.
-        image_info = self.image_info[image_id]
-        if image_info["source"] != source:
-            return super(self.__class__, self).load_mask(image_id)
- 
-        # Convert shapes to a bitmap mask of shape
-        # [height, width, instance_count]
-        info = self.image_info[image_id]
-        mask = np.zeros([info["height"], info["width"], len(info["shapes"])], dtype=np.uint8)
-        #printsx,printsy=zip(*points)
-        for idx, points in enumerate(info["shapes"]):
-            # print(info["shapes"])
-            #if idx==0:
-            #    print(points)
-            #    print(points[:,0])
-            # Get indexes of pixels inside the polygon and set them to 1
-            pointsy,pointsx = zip(*points[:,0])
             rr, cc = skimage.draw.polygon(pointsx, pointsy)
             mask[rr, cc, idx] = 1
         masks_np = mask.astype(np.bool)
@@ -434,7 +338,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Mask R-CNN to detect balloons.')
     parser.add_argument("command",
                         metavar="<command>",
-                        help="'train' or 'test' or 'inference' or 'train_INRIA'")
+                        help="'train' or 'test' or 'inference'")
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/dataset/",
                         help='Directory of your dataset')
@@ -463,7 +367,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
  
     # Validate arguments
-    if args.command == "train" or args.command == "train_INRIA":
+    if args.command == "train":
         assert args.dataset, "Argument --dataset is required for training"
     elif args.command == "test":
         assert args.image or args.video or args.classnum, \
@@ -484,12 +388,6 @@ if __name__ == '__main__':
         dataset_train.load_darkroof(args.dataset,"train")
         dataset_val.load_darkroof(args.dataset,"val")
         config.NUM_CLASSES = len(dataset_train.class_info)
-    elif args.command == "train_INRIA":
-        config = DarkRoofConfig()
-        dataset_train, dataset_val = DarkRoofDataset(), DarkRoofDataset()
-        dataset_train.load_INRIA(args.dataset,"train", config)
-        dataset_val.load_INRIA(args.dataset,"val", config)
-        config.NUM_CLASSES = len(dataset_train.class_info)
     elif args.command == "test":
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
@@ -506,7 +404,7 @@ if __name__ == '__main__':
     config.display()
  
     # Create model
-    if args.command == "train" or args.command == "train_INRIA":
+    if args.command == "train":
         model = modellib.MaskRCNN(mode="training", config=config,model_dir=args.logs)
     else:
         model = modellib.MaskRCNN(mode="inference", config=config, model_dir=args.logs)
@@ -530,28 +428,6 @@ if __name__ == '__main__':
     print("Loading weights ", weights_path)
     
     if args.command == "train":
-        if args.weights.lower() == "coco":
-            # Exclude the last layers because they require a matching
-            # number of classes if we change the backbone?
-            model.load_weights(weights_path, by_name=True, exclude=[
-                "mrcnn_class_logits", "mrcnn_bbox_fc",
-                "mrcnn_bbox", "mrcnn_mask"])
-            print("Loading weights finished")
-        else:
-            model.load_weights(weights_path, by_name=True)
-            
-        # DA Data Augmentation
-        if args.DA:        
-            augmentation = imgaug.augmenters.Sometimes(0.5, [
-                imgaug.augmenters.Fliplr(0.5),
-                imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
-                ])
-        
-        # Train
-        print("Start Training !")
-        train(dataset_train, dataset_val, model, augmentation)
-        
-    elif args.command == "train_INRIA":
         if args.weights.lower() == "coco":
             # Exclude the last layers because they require a matching
             # number of classes if we change the backbone?
