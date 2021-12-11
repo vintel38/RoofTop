@@ -74,6 +74,18 @@ class RoofConfig(Config):
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
+###########################################################################   
+class InferenceConfig(Config):
+    # Set batch size to 1 since we'll be running inference on
+    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    NAME = 'roof'
+    # https://github.com/matterport/Mask_RCNN/issues/709
+    NUM_CLASSES =  1 +1 
+    # https://github.com/matterport/Mask_RCNN/issues/410
+
+
 
 ############################################################
 #  Dataset
@@ -176,7 +188,7 @@ class RoofDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model):
+def train(model, epochs=30):
     """Train the model."""
     # Training dataset.
     dataset_train = RoofDataset()
@@ -195,34 +207,14 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,
+                epochs,
                 layers='heads')
-
-
-def color_splash(image, mask):
-    """Apply color splash effect.
-    image: RGB image [height, width, 3]
-    mask: instance segmentation mask [height, width, instance count]
-
-    Returns result image.
-    """
-    # Make a grayscale copy of the image. The grayscale copy still
-    # has 3 RGB channels, though.
-    gray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
-    # Copy color pixels from the original color image where mask is set
-    if mask.shape[-1] > 0:
-        # We're treating all instances as one, so collapse the mask into one layer
-        mask = (np.sum(mask, -1, keepdims=True) >= 1)
-        splash = np.where(mask, image, gray).astype(np.uint8)
-    else:
-        splash = gray.astype(np.uint8)
-    return splash
-
-
-def detect_and_color_splash(model, image_path=None, video_path=None):
+                
+                
+def test(model, image_path = None, video_path=None, savedfile=None):
     assert image_path or video_path
-
-    # Image or video?
+ 
+     # Image or video?
     if image_path:
         # Run model detection and generate the color splash effect
         print("Running on {}".format(args.image))
@@ -230,45 +222,95 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
         image = skimage.io.imread(args.image)
         # Detect objects
         r = model.detect([image], verbose=1)[0]
-        # Color splash
-        splash = color_splash(image, r['masks'])
+        # Colorful
+        import matplotlib.pyplot as plt
+        
+        _, ax = plt.subplots()
+        visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
+            class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
+            class_names=None,scores=None, show_mask=True, show_bbox=True)
         # Save output
-        file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        skimage.io.imsave(file_name, splash)
+        if savedfile == None:
+            file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+        else:
+            file_name = savedfile
+        plt.savefig(file_name)
+        #skimage.io.imsave(file_name, testresult)
     elif video_path:
-        import cv2
-        # Video capture
-        vcapture = cv2.VideoCapture(video_path)
-        width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = vcapture.get(cv2.CAP_PROP_FPS)
-
-        # Define codec and create video writer
-        file_name = "splash_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now())
-        vwriter = cv2.VideoWriter(file_name,
-                                  cv2.VideoWriter_fourcc(*'MJPG'),
-                                  fps, (width, height))
-
-        count = 0
-        success = True
-        while success:
-            print("frame: ", count)
-            # Read next image
-            success, image = vcapture.read()
-            if success:
-                # OpenCV returns images as BGR, convert to RGB
-                image = image[..., ::-1]
-                # Detect objects
-                r = model.detect([image], verbose=0)[0]
-                # Color splash
-                splash = color_splash(image, r['masks'])
-                # RGB -> BGR to save image to video
-                splash = splash[..., ::-1]
-                # Add image to video writer
-                vwriter.write(splash)
-                count += 1
-        vwriter.release()
+        pass
     print("Saved to ", file_name)
+
+
+# def color_splash(image, mask):
+    # """Apply color splash effect.
+    # image: RGB image [height, width, 3]
+    # mask: instance segmentation mask [height, width, instance count]
+
+    # Returns result image.
+    # """
+    # # Make a grayscale copy of the image. The grayscale copy still
+    # # has 3 RGB channels, though.
+    # gray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
+    # # Copy color pixels from the original color image where mask is set
+    # if mask.shape[-1] > 0:
+        # # We're treating all instances as one, so collapse the mask into one layer
+        # mask = (np.sum(mask, -1, keepdims=True) >= 1)
+        # splash = np.where(mask, image, gray).astype(np.uint8)
+    # else:
+        # splash = gray.astype(np.uint8)
+    # return splash
+
+
+# def detect_and_color_splash(model, image_path=None, video_path=None):
+    # assert image_path or video_path
+
+    # # Image or video?
+    # if image_path:
+        # # Run model detection and generate the color splash effect
+        # print("Running on {}".format(args.image))
+        # # Read image
+        # image = skimage.io.imread(args.image)
+        # # Detect objects
+        # r = model.detect([image], verbose=1)[0]
+        # # Color splash
+        # splash = color_splash(image, r['masks'])
+        # # Save output
+        # file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+        # skimage.io.imsave(file_name, splash)
+    # elif video_path:
+        # import cv2
+        # # Video capture
+        # vcapture = cv2.VideoCapture(video_path)
+        # width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        # height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # fps = vcapture.get(cv2.CAP_PROP_FPS)
+
+        # # Define codec and create video writer
+        # file_name = "splash_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now())
+        # vwriter = cv2.VideoWriter(file_name,
+                                  # cv2.VideoWriter_fourcc(*'MJPG'),
+                                  # fps, (width, height))
+
+        # count = 0
+        # success = True
+        # while success:
+            # print("frame: ", count)
+            # # Read next image
+            # success, image = vcapture.read()
+            # if success:
+                # # OpenCV returns images as BGR, convert to RGB
+                # image = image[..., ::-1]
+                # # Detect objects
+                # r = model.detect([image], verbose=0)[0]
+                # # Color splash
+                # splash = color_splash(image, r['masks'])
+                # # RGB -> BGR to save image to video
+                # splash = splash[..., ::-1]
+                # # Add image to video writer
+                # vwriter.write(splash)
+                # count += 1
+        # vwriter.release()
+    # print("Saved to ", file_name)
 
 
 ############################################################
@@ -283,7 +325,7 @@ if __name__ == '__main__':
         description='Train Mask R-CNN to detect roofs.')
     parser.add_argument("command",
                         metavar="<command>",
-                        help="'train' or 'splash'")
+                        help="'train' or 'splash' or 'test'")
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/roof/dataset/",
                         help='Directory of the Roof dataset')
@@ -300,12 +342,18 @@ if __name__ == '__main__':
     parser.add_argument('--video', required=False,
                         metavar="path or URL to video",
                         help='Video to apply the color splash effect on')
+    parser.add_argument('--classnum', required=False,
+                        metavar="class number of your detect model",
+                        help="Class number of your detector.")
+    parser.add_argument('--epochs', required=False,
+                        metavar="Number of epochs for the training phase",
+                        help="Nb of training phases")
     args = parser.parse_args()
 
     # Validate arguments
     if args.command == "train":
         assert args.dataset, "Argument --dataset is required for training"
-    elif args.command == "splash":
+    elif args.command == "splash" or args.command == "test":
         assert args.image or args.video,\
                "Provide --image or --video to apply color splash"
 
@@ -317,12 +365,9 @@ if __name__ == '__main__':
     if args.command == "train":
         config = RoofConfig()
     else:
-        class InferenceConfig(RoofConfig):
-            # Set batch size to 1 since we'll be running inference on
-            # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-            GPU_COUNT = 1
-            IMAGES_PER_GPU = 1
         config = InferenceConfig()
+        config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
+        
     config.display()
 
     # Create model
@@ -347,24 +392,31 @@ if __name__ == '__main__':
         weights_path = model.get_imagenet_weights()
     else:
         weights_path = args.weights
-
-    # Load weights
-    print("Loading weights ", weights_path)
-    if args.weights.lower() == "coco":
-        # Exclude the last layers because they require a matching
-        # number of classes
-        model.load_weights(weights_path, by_name=True, exclude=[
-            "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask"])
-    else:
-        model.load_weights(weights_path, by_name=True)
-
-    # Train or evaluate
+              
     if args.command == "train":
-        train(model)
-    elif args.command == "splash":
-        detect_and_color_splash(model, image_path=args.image,
-                                video_path=args.video)
+        # Load weights
+        print("Loading weights ", weights_path)
+        if args.weights.lower() == "coco":
+            # Exclude the last layers because they require a matching
+            # number of classes if we change the backbone?
+            model.load_weights(weights_path, by_name=True, exclude=[
+                "mrcnn_class_logits", "mrcnn_bbox_fc",
+                "mrcnn_bbox", "mrcnn_mask"])
+        else:
+            model.load_weights(weights_path, by_name=True)
+        print("Loading weights finished")
+        # Train or evaluate
+        print("Start Training !")
+        train(model, epochs=args.epochs)
+    elif args.command == "test":
+        # we test all models trained on the dataset in different stage
+        print(os.getcwd())
+        filenames = os.listdir(args.weights)
+        for filename in filenames:
+            if filename.endswith(".h5"):
+                print("Load weights from {filename} ".format(filename=filename))
+                model.load_weights(os.path.join(args.weights,filename),by_name=True)
+                savedfile_name = os.path.splitext(filename)[0] + ".jpg"
+                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
     else:
-        print("'{}' is not recognized. "
-              "Use 'train' or 'splash'".format(args.command))
+        print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
