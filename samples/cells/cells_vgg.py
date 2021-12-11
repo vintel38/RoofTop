@@ -183,11 +183,11 @@ class CellDataset(utils.Dataset):
             mask[rr, cc, i] = 1
             if 'classid' in p:
                 if p['classid']== 'shsy5y':
-                    classid = 1
+                    classid[i] = 1
                 elif p['classid']== 'astro':
-                    classid = 2
+                    classid[i] = 2
                 elif p['classid']== 'cort':
-                    classid = 3
+                    classid[i] = 3
                 # classid[i] = self.map_source_class_id("cell.{}".format(p['classid']))
             else:
                 classid[i] = 1
