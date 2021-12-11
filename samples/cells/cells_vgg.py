@@ -182,13 +182,13 @@ class CellDataset(utils.Dataset):
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
             mask[rr, cc, i] = 1
             if 'classid' in p:
-                classid[i] = p['classid']
+                classid[i] = self.map_source_class_id("cell.{}".format(p['classid']))
             else:
                 classid[i] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
-        return mask.astype(np.bool), classid
+        return mask.astype(np.bool), np.array(classid, dtype=np.int32)
         # https://github.com/matterport/Mask_RCNN/issues/639
 
     def image_reference(self, image_id):
