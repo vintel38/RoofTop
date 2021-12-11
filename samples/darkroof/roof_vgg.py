@@ -240,7 +240,7 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         #skimage.io.imsave(file_name, testresult)
     elif video_path:
         pass
-    print("Saved to ", file_name)
+    print("Saved to ", os.getcwd() , file_name)
 
 
 # def color_splash(image, mask):
