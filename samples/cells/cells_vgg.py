@@ -233,6 +233,11 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         print("Running on {}".format(args.image))
         # Read image
         image = skimage.io.imread(args.image)
+        if image.ndim != 3:
+            image = skimage.color.gray2rgb(image)
+        # If has an alpha channel, remove it for consistency
+        if image.shape[-1] == 4:
+            image = image[..., :3]
         # Detect objects
         r = model.detect([image], verbose=1)[0]
         # Colorful
