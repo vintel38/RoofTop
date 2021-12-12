@@ -419,7 +419,7 @@ if __name__ == '__main__':
         print("Loading weights finished")
         # Train or evaluate
         print("Start Training !")
-        train(model, epochs=args.epochs)
+        train(model, epochs=int(args.epochs))
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
         print(os.getcwd())
