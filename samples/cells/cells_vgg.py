@@ -258,7 +258,8 @@ def test(model, image_path = None, video_path=None, savedfile=None, classname = 
         # Detect objects
         r = model.detect([image], verbose=1)[0]
         
-        masks = fix_overlap(r['rois'])
+        # masks = fix_overlap(r['rois'])
+        masks = r['rois']
         # https://www.kaggle.com/c/sartorius-cell-instance-segmentation/discussion/279995
                 
         # Colorful
@@ -314,7 +315,8 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', required=False,
                         metavar="Number of epochs for the training phase",
                         help="Nb of training phases")
-    parser.add_argument('--classnames', required=False,
+    # https://stackoverflow.com/questions/32761999/how-to-pass-an-entire-list-as-command-line-argument-in-python/32763023
+    parser.add_argument('--classnames', nargs="*", type=str, default=['BG'],required=False,
                         metavar="Names of classes to be detected",
                         help="Names of classes")
     # https://stackoverflow.com/questions/23566970/using-argparse-to-create-output-file
