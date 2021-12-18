@@ -233,6 +233,7 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         print("Running on {}".format(args.image))
         # Read image
         image = skimage.io.imread(args.image)
+        # https://github.com/matterport/Mask_RCNN/issues/1435
         if image.ndim != 3:
             image = skimage.color.gray2rgb(image)
         # If has an alpha channel, remove it for consistency
@@ -246,7 +247,7 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         _, ax = plt.subplots()
         visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
             class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
-            class_names=None,scores=None, show_mask=True, show_bbox=True)
+            class_names=None,scores=r['scores'], show_mask=True, show_bbox=True)
         # Save output
         if savedfile == None:
             file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
@@ -366,6 +367,11 @@ if __name__ == '__main__':
                 print("Load weights from {filename} ".format(filename=filename))
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
+                data = args.dataset
+                print(data.class_info)
+                print(args.dataset.class_info)
+                class_name = [args.dataset.class_info[idx+1]['name'] for idx in range(len(args.dataset.class_info)-1)]
+                print(class_name)
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
     elif args.command == "submission":
         filenames = os.listdir(args.image)
@@ -374,12 +380,17 @@ if __name__ == '__main__':
         for filename in filenames:
             name, _ = filename.split('.')
             image = skimage.io.imread(os.path.join(args.image, filename))
+            # https://github.com/matterport/Mask_RCNN/issues/1435
+            if image.ndim != 3:
+                image = skimage.color.gray2rgb(image)
+            # If has an alpha channel, remove it for consistency
+            if image.shape[-1] == 4:
+                image = image[..., :3]
             # Detect objects
             r = model.detect([image], verbose=1)[0]
             # without any open files necessary 
             # https://stackoverflow.com/questions/30811918/saving-dictionary-of-numpy-arrays
-            np.save(os.path.join(args.output,name+'.npy'), r)
-                
+            np.save(os.path.join(args.output,name+'.npy'), r)     
         
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
