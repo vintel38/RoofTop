@@ -183,7 +183,7 @@ class CellDataset(utils.Dataset):
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
             mask[rr, cc, i] = 1
             if 'classid' in p:
-                classid[i] = [self.class_info[idx+1]['name']==p['classid'] for idx in range(len(self.class_info)-1)].index(True)
+                classid[i] = [self.class_info[idx]['name']==p['classid'] for idx in range(len(self.class_info))].index(True) # + 1 
             else:
                 classid[i] = 1
 
