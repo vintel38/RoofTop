@@ -314,6 +314,9 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', required=False,
                         metavar="Number of epochs for the training phase",
                         help="Nb of training phases")
+    parser.add_argument('--classnames', required=False,
+                        metavar="Names of classes to be detected",
+                        help="Names of classes")
     # https://stackoverflow.com/questions/23566970/using-argparse-to-create-output-file
     parser.add_argument("-o", "--output", required=False,
                         help="Output folder of your choice")
@@ -386,7 +389,7 @@ if __name__ == '__main__':
                 print("Load weights from {filename} ".format(filename=filename))
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
-                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.dataset.class_names)
+                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.classnames)
     elif args.command == "submission":
         filenames = os.listdir(args.image)
         print("Load weights from {filename} ".format(filename=args.weights))
