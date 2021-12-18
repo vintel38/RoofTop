@@ -223,8 +223,24 @@ def train(model, epochs=30):
                 epochs=epochs,
                 layers='heads')
                 
+def fix_overlap(msk):
+    """
+    Args:
+        mask: multi-channel mask, each channel is an instance of cell, shape:(520,704,None)
+    Returns:
+        multi-channel mask with non-overlapping values, shape:(520,704,None)
+    """
+    msk = np.array(msk)
+    msk = np.pad(msk, [[0,0],[0,0],[1,0]])
+    ins_len = msk.shape[-1]
+    msk = np.argmax(msk,axis=-1)
+    msk = tf.keras.utils.to_categorical(msk, num_classes=ins_len)
+    msk = msk[...,1:]
+    msk = msk[...,np.any(msk, axis=(0,1))]
+    return msk
                 
-def test(model, image_path = None, video_path=None, savedfile=None):
+                
+def test(model, image_path = None, video_path=None, savedfile=None, classname = None):
     assert image_path or video_path
  
      # Image or video?
@@ -241,13 +257,16 @@ def test(model, image_path = None, video_path=None, savedfile=None):
             image = image[..., :3]
         # Detect objects
         r = model.detect([image], verbose=1)[0]
+        
+        masks = fix_overlap(r['rois'])
+        # https://www.kaggle.com/c/sartorius-cell-instance-segmentation/discussion/279995
+                
         # Colorful
         import matplotlib.pyplot as plt
-        
         _, ax = plt.subplots()
-        visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
+        visualize.get_display_instances_pic(image, boxes=masks, masks=r['masks'], 
             class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
-            class_names=None,scores=r['scores'], show_mask=True, show_bbox=True)
+            class_names=classname,scores=r['scores'], show_mask=True, show_bbox=True)
         # Save output
         if savedfile == None:
             file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
@@ -367,12 +386,7 @@ if __name__ == '__main__':
                 print("Load weights from {filename} ".format(filename=filename))
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
-                data = args.dataset
-                print(data.class_info)
-                print(args.dataset.class_info)
-                class_name = [args.dataset.class_info[idx+1]['name'] for idx in range(len(args.dataset.class_info)-1)]
-                print(class_name)
-                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.dataset.class_names)
     elif args.command == "submission":
         filenames = os.listdir(args.image)
         print("Load weights from {filename} ".format(filename=args.weights))
