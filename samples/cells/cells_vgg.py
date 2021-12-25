@@ -111,7 +111,7 @@ class CellDataset(utils.Dataset):
         self.add_class("cell", 3, "cort")
 
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val", "test"]
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
@@ -503,7 +503,7 @@ if __name__ == '__main__':
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.classnames)
                 
     elif args.command == "detect":
-        detect(model, args.dataset, args.subset)
+        detect(model, args.dataset, 'test')
         
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
