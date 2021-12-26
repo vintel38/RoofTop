@@ -33,7 +33,6 @@ import json
 import datetime
 import numpy as np
 import skimage.draw
-import csv
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -286,7 +285,7 @@ def test(model, image_path = None, video_path=None, savedfile=None, classname = 
 #  Detection
 ############################################################
 
-def detect(model, dataset_dir, subset):
+def detect(model, dataset_dir, class_names):
     """Run detection on images in the given directory."""
     print("Running on {}".format(dataset_dir))
 
@@ -297,32 +296,37 @@ def detect(model, dataset_dir, subset):
     submit_dir = os.path.join(RESULTS_DIR, submit_dir)
     os.makedirs(submit_dir)
 
-    # Read dataset
-    dataset = NucleusDataset()
-    dataset.load_nucleus(dataset_dir, subset)
-    dataset.prepare()
     # Load over images
     submission = []
-    for image_id in dataset.image_ids:
+    for image_name in os.listdir(dataset_dir):
+        name, _ = image_name.split('.')
         # Load image and run detection
-        image = dataset.load_image(image_id)
+        image = skimage.io.imread(os.path.join(dataset_dir, image_name))
+        # https://github.com/matterport/Mask_RCNN/issues/1435
+        if image.ndim != 3:
+            image = skimage.color.gray2rgb(image)
+        # If has an alpha channel, remove it for consistency
+        if image.shape[-1] == 4:
+            image = image[..., :3]
         # Detect objects
-        r = model.detect([image], verbose=0)[0]
+        r = model.detect([image], verbose=1)[0]
         # Encode image to RLE. Returns a string of multiple lines
-        source_id = dataset.image_info[image_id]["id"]
+        source_id = name
         rle = mask_to_rle(source_id, r["masks"], r["scores"])
-        submission.append(rle)
+        submission.append([name, rle])
+        import matplotlib.pyplot as plt
+        import csv
         # Save image with masks
-        visualize.display_instances(
+        visualize.get_display_instances_pic(
             image, r['rois'], r['masks'], r['class_ids'],
-            dataset.class_names, r['scores'],
-            show_bbox=False, show_mask=False,
-            title="Predictions")
-        plt.savefig("{}/{}.png".format(submit_dir, dataset.image_info[image_id]["id"]))
+            class_number=model.config.NUM_CLASSES, ax = ax,
+            class_names = class_names, r['scores'],
+            show_bbox=False, show_mask=False)
+        plt.savefig("{}/{}.png".format(submit_dir, name))
 
     # Save to csv file
-    submission = "ImageId,EncodedPixels\n" + "\n".join(submission)
-    file_path = os.path.join(submit_dir, "submit.csv")
+    submission = "id,predicted\n" + "\n".join(submission)
+    file_path = os.path.join(submit_dir, "submission.csv")
     with open(file_path, "w") as f:
         f.write(submission)
     print("Saved to ", submit_dir)
