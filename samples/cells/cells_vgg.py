@@ -295,40 +295,43 @@ def detect(model, dataset_dir, class_names):
     submit_dir = "submit_{:%Y%m%dT%H%M%S}".format(datetime.datetime.now())
     submit_dir = os.path.join(RESULTS_DIR, submit_dir)
     os.makedirs(submit_dir)
-
-    # Load over images
-    submission = []
-    for image_name in os.listdir(dataset_dir):
-        name, _ = image_name.split('.')
-        # Load image and run detection
-        image = skimage.io.imread(os.path.join(dataset_dir, image_name))
-        # https://github.com/matterport/Mask_RCNN/issues/1435
-        if image.ndim != 3:
-            image = skimage.color.gray2rgb(image)
-        # If has an alpha channel, remove it for consistency
-        if image.shape[-1] == 4:
-            image = image[..., :3]
-        # Detect objects
-        r = model.detect([image], verbose=1)[0]
-        # Encode image to RLE. Returns a string of multiple lines
-        source_id = name
-        rle = mask_to_rle(source_id, r["masks"], r["scores"])
-        submission.append([name, rle])
-        import matplotlib.pyplot as plt
-        import csv
-        # Save image with masks
-        visualize.get_display_instances_pic(
-            image, r['rois'], r['masks'], r['class_ids'],
-            class_number=model.config.NUM_CLASSES, ax = ax,
-            class_names = class_names, r['scores'],
-            show_bbox=False, show_mask=False)
-        plt.savefig("{}/{}.png".format(submit_dir, name))
-
+    import matplotlib.pyplot as plt
+    import csv
     # Save to csv file
-    submission = "id,predicted\n" + "\n".join(submission)
     file_path = os.path.join(submit_dir, "submission.csv")
     with open(file_path, "w") as f:
-        f.write(submission)
+        header = ['id', 'predicted']
+        writer = csv.writer(f)
+        # write the header
+        writer.writerow(header)
+        for image_name in os.listdir(dataset_dir):
+            name, _ = image_name.split('.')
+            print("Running on {}".format(os.path.join(dataset_dir, image_name)))
+            # Load image and run detection
+            image = skimage.io.imread(os.path.join(dataset_dir, image_name))
+            # https://github.com/matterport/Mask_RCNN/issues/1435
+            if image.ndim != 3:
+                image = skimage.color.gray2rgb(image)
+            # If has an alpha channel, remove it for consistency
+            if image.shape[-1] == 4:
+                image = image[..., :3]
+            # Detect objects
+            r = model.detect([image], verbose=1)[0]
+            # Encode image to RLE. Returns a string of multiple lines
+            source_id = name
+            rle = mask_to_rle(source_id, r["masks"], r["scores"])
+            row = [name, rle]
+            writer.writerow(row)
+            
+            # Save image with masks
+            _, ax = plt.subplots()
+            visualize.get_display_instances_pic(
+                image, boxes = r['rois'],masks = r['masks'], class_ids = r['class_ids'],
+                class_number=model.config.NUM_CLASSES, ax = ax,
+                class_names = class_names, scores=r['scores'],
+                show_bbox=False, show_mask=False)
+            plt.savefig("{}/{}.png".format(submit_dir, name))
+
     print("Saved to ", submit_dir)
     
     
@@ -507,7 +510,7 @@ if __name__ == '__main__':
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.classnames)
                 
     elif args.command == "detect":
-        detect(model, args.dataset, 'test')
+        detect(model, args.dataset, args.classnames)
         
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
