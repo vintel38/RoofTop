@@ -397,7 +397,7 @@ if __name__ == '__main__':
     elif args.command == "eval":
         config = DarkRoofEvalConfig()
         dataset_val = DarkRoofDataset()
-        dataset_val.load_darkroof(args.dataset,"test")
+        dataset_val.load_darkroof(args.dataset)
         dataset_val.prepare()
         config.NUM_CLASSES = len(dataset_val.class_info)
         
@@ -486,17 +486,10 @@ if __name__ == '__main__':
             image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, image_id)
             scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image : substract mean pixels to main image
             sample = np.expand_dims(scaled_image, 0)
-            yhat = model.detect(sample, verbose=0)
+            r = model.detect(sample, verbose=0)[0]
             # https://github.com/matterport/Mask_RCNN/issues/1285
-            r = yhat[0]
-            #print("gt_bbox {}".format(gt_bbox.shape))
-            #print("gt_class_id {}".format(gt_class_id.shape))
-            #print("gt_mask {}".format(gt_mask.shape))
-            #print("r_bbox {}".format(r["rois"].shape))
-            #print("r_class_id {}".format(r["class_ids"].shape))
-            #print("r_mask {}".format(r["masks"].shape))
             AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
-            AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.2)
+            AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
             ARs.append(AR)
             F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
             APs.append(AP)

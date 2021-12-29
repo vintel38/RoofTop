@@ -75,6 +75,33 @@ class RoofConfig(Config):
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
+    
+#############################################################
+
+class RoofEvalConfig(Config):
+    """Configuration for training on the toy  dataset.
+    Derives from the base Config class and overrides some values.
+    """
+    # Give the configuration a recognizable name
+    NAME = "roof"
+ 
+    # We use a GPU with 12GB memory, which can fit two images.
+    # Adjust down if you use a smaller GPU.
+    IMAGES_PER_GPU = 1 # 1
+ 
+    # Number of classes (including background)
+    NUM_CLASSES = 1 + 1# Background,
+    # typically after labeled, class can be set from Dataset class
+    # if you want to test your model, better set it corectly based on your trainning dataset
+ 
+    # Number of training steps per epoch
+    STEPS_PER_EPOCH = 100
+ 
+    # Skip detections with < 90% confidence
+    DETECTION_MIN_CONFIDENCE = 0.9
+
+    USE_MINI_MASK = False
+    # https://github.com/matterport/Mask_RCNN/issues/2474
 
 ###########################################################################   
 class InferenceConfig(Config):
@@ -241,79 +268,19 @@ def test(model, image_path = None, video_path=None, savedfile=None):
     elif video_path:
         pass
     print("Saved to ", os.getcwd() , file_name)
-
-
-# def color_splash(image, mask):
-    # """Apply color splash effect.
-    # image: RGB image [height, width, 3]
-    # mask: instance segmentation mask [height, width, instance count]
-
-    # Returns result image.
-    # """
-    # # Make a grayscale copy of the image. The grayscale copy still
-    # # has 3 RGB channels, though.
-    # gray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
-    # # Copy color pixels from the original color image where mask is set
-    # if mask.shape[-1] > 0:
-        # # We're treating all instances as one, so collapse the mask into one layer
-        # mask = (np.sum(mask, -1, keepdims=True) >= 1)
-        # splash = np.where(mask, image, gray).astype(np.uint8)
-    # else:
-        # splash = gray.astype(np.uint8)
-    # return splash
-
-
-# def detect_and_color_splash(model, image_path=None, video_path=None):
-    # assert image_path or video_path
-
-    # # Image or video?
-    # if image_path:
-        # # Run model detection and generate the color splash effect
-        # print("Running on {}".format(args.image))
-        # # Read image
-        # image = skimage.io.imread(args.image)
-        # # Detect objects
-        # r = model.detect([image], verbose=1)[0]
-        # # Color splash
-        # splash = color_splash(image, r['masks'])
-        # # Save output
-        # file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        # skimage.io.imsave(file_name, splash)
-    # elif video_path:
-        # import cv2
-        # # Video capture
-        # vcapture = cv2.VideoCapture(video_path)
-        # width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        # height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        # fps = vcapture.get(cv2.CAP_PROP_FPS)
-
-        # # Define codec and create video writer
-        # file_name = "splash_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now())
-        # vwriter = cv2.VideoWriter(file_name,
-                                  # cv2.VideoWriter_fourcc(*'MJPG'),
-                                  # fps, (width, height))
-
-        # count = 0
-        # success = True
-        # while success:
-            # print("frame: ", count)
-            # # Read next image
-            # success, image = vcapture.read()
-            # if success:
-                # # OpenCV returns images as BGR, convert to RGB
-                # image = image[..., ::-1]
-                # # Detect objects
-                # r = model.detect([image], verbose=0)[0]
-                # # Color splash
-                # splash = color_splash(image, r['masks'])
-                # # RGB -> BGR to save image to video
-                # splash = splash[..., ::-1]
-                # # Add image to video writer
-                # vwriter.write(splash)
-                # count += 1
-        # vwriter.release()
-    # print("Saved to ", file_name)
-
+    
+def evaluate(dataset, config, image_id):
+    image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, image_id)
+    scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image : substract mean pixels to main image
+    sample = np.expand_dims(scaled_image, 0)
+    r = model.detect(sample, verbose=0)[0]
+    # https://github.com/matterport/Mask_RCNN/issues/1285
+    AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+    AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
+    ARs.append(AR)
+    F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
+    APs.append(AP)
+    return APs, ARs, F1_scores
 
 ############################################################
 #  Training
@@ -366,6 +333,12 @@ if __name__ == '__main__':
     # Configurations
     if args.command == "train":
         config = RoofConfig()
+    elif args.command == "eval":
+        config = RoofEvalConfig()
+        dataset_val = RoofDataset()
+        dataset_val.load_roof(args.dataset)
+        dataset_val.prepare()
+        config.NUM_CLASSES = len(dataset_val.class_info)
     else:
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
@@ -420,5 +393,29 @@ if __name__ == '__main__':
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
                 test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+    
+    elif args.command == "eval":
+      # https://github.com/matterport/Mask_RCNN/issues/2474
+        APs = list(); 
+        ARs = list();
+        F1_scores = list();
+        if os.path.isfile(args.weights):
+            model.load_weights(args.weights,by_name=True)
+            for image_id in dataset_val.image_ids:     
+                APs, ARs, F1_scores = evaluate(dataset, config, image_id):
+            mAP = np.mean(APs)
+            mAR = np.mean(ARs)
+            print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
+        elif os.path.isfile(args.weights):
+            weights = os.listdir(args.weights)
+            for weight in weights:
+                path_weight = os.path.join(args.weights, weight)
+                model.load_weights(path_weight,by_name=True)
+                for image_id in dataset_val.image_ids:     
+                    APs, ARs, F1_scores = evaluate(dataset, config, image_id):
+                mAP = np.mean(APs)
+                mAR = np.mean(ARs)
+                print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
+                
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
