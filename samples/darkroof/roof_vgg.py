@@ -33,6 +33,7 @@ import json
 import datetime
 import numpy as np
 import skimage.draw
+from tqdm import tqdm
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -408,7 +409,7 @@ if __name__ == '__main__':
         F1_scores = list();
         if os.path.isfile(args.weights):
             model.load_weights(args.weights,by_name=True)
-            for image_id in dataset_val.image_ids:     
+            for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
                 APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
@@ -418,7 +419,7 @@ if __name__ == '__main__':
             for weight in weights:
                 path_weight = os.path.join(args.weights, weight)
                 model.load_weights(path_weight,by_name=True)
-                for image_id in dataset_val.image_ids:     
+                for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
                     APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
                 mAP = np.mean(APs)
                 mAR = np.mean(ARs)
