@@ -78,6 +78,33 @@ class CellConfig(Config):
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
+    
+#############################################################
+
+class CellEvalConfig(Config):
+    """Configuration for training on the toy  dataset.
+    Derives from the base Config class and overrides some values.
+    """
+    # Give the configuration a recognizable name
+    NAME = "cell"
+ 
+    # We use a GPU with 12GB memory, which can fit two images.
+    # Adjust down if you use a smaller GPU.
+    IMAGES_PER_GPU = 1 # 1
+ 
+    # Number of classes (including background)
+    NUM_CLASSES = 3 + 1# Background,
+    # typically after labeled, class can be set from Dataset class
+    # if you want to test your model, better set it corectly based on your trainning dataset
+ 
+    # Number of training steps per epoch
+    STEPS_PER_EPOCH = 100
+ 
+    # Skip detections with < 90% confidence
+    DETECTION_MIN_CONFIDENCE = 0.9
+
+    USE_MINI_MASK = False
+    # https://github.com/matterport/Mask_RCNN/issues/2474
 
 ###########################################################################   
 class InferenceConfig(Config):
@@ -281,6 +308,19 @@ def test(model, image_path = None, video_path=None, savedfile=None, classname = 
         pass
     print("Saved to ", os.getcwd() , file_name)
     
+def evaluate(dataset, config, image_id):
+    image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, image_id)
+    scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image : substract mean pixels to main image
+    sample = np.expand_dims(scaled_image, 0)
+    r = model.detect(sample, verbose=0)[0]
+    # https://github.com/matterport/Mask_RCNN/issues/1285
+    AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+    AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
+    ARs.append(AR)
+    F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
+    APs.append(AP)
+    return APs, ARs, F1_scores
+    
 ############################################################
 #  Detection
 ############################################################
@@ -453,6 +493,12 @@ if __name__ == '__main__':
     # Configurations
     if args.command == "train":
         config = CellConfig()
+    elif args.command == "eval":
+        config = CellEvalConfig()
+        dataset_val = CellDataset()
+        dataset_val.load_cell(args.dataset)
+        dataset_val.prepare()
+        config.NUM_CLASSES = len(dataset_val.class_info)
     else:
         config = InferenceConfig()
         config.NUM_CLASSES = int(args.classnum)+1 # add backgrouond
@@ -511,6 +557,29 @@ if __name__ == '__main__':
                 
     elif args.command == "detect":
         detect(model, args.dataset, args.classnames)
+    
+    elif args.command == "eval":
+      # https://github.com/matterport/Mask_RCNN/issues/2474
+        APs = list(); 
+        ARs = list();
+        F1_scores = list();
+        if os.path.isfile(args.weights):
+            model.load_weights(args.weights,by_name=True)
+            for image_id in dataset_val.image_ids:     
+                APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
+            mAP = np.mean(APs)
+            mAR = np.mean(ARs)
+            print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
+        elif os.path.isfile(args.weights):
+            weights = os.listdir(args.weights)
+            for weight in weights:
+                path_weight = os.path.join(args.weights, weight)
+                model.load_weights(path_weight,by_name=True)
+                for image_id in dataset_val.image_ids:     
+                    APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
+                mAP = np.mean(APs)
+                mAR = np.mean(ARs)
+                print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
         
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
