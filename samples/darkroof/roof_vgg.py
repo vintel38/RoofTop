@@ -131,7 +131,7 @@ class RoofDataset(utils.Dataset):
         self.add_class("roof", 1, "roof")
 
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val", "test"]
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
@@ -311,12 +311,19 @@ if __name__ == '__main__':
     parser.add_argument('--video', required=False,
                         metavar="path or URL to video",
                         help='Video to apply the color splash effect on')
+    parser.add_argument('--output', required=False,
+                        metavar="output folder to store output file of the program",
+                        help='Output folder of the Mask RCNN program')
     parser.add_argument('--classnum', required=False,
                         metavar="class number of your detect model",
                         help="Class number of your detector.")
     parser.add_argument('--epochs', required=False,
                         metavar="Number of epochs for the training phase",
                         help="Nb of training phases")
+    # https://stackoverflow.com/questions/32761999/how-to-pass-an-entire-list-as-command-line-argument-in-python/32763023
+    parser.add_argument('--classnames', nargs="*", type=str, default=['BG'],required=False,
+                        metavar="Names of classes to be detected",
+                        help="Names of classes")
     args = parser.parse_args()
 
     # Validate arguments
@@ -336,7 +343,7 @@ if __name__ == '__main__':
     elif args.command == "eval":
         config = RoofEvalConfig()
         dataset_val = RoofDataset()
-        dataset_val.load_roof(args.dataset)
+        dataset_val.load_roof(args.dataset, 'val')
         dataset_val.prepare()
         config.NUM_CLASSES = len(dataset_val.class_info)
     else:
@@ -392,7 +399,7 @@ if __name__ == '__main__':
                 print("Load weights from {filename} ".format(filename=filename))
                 model.load_weights(os.path.join(args.weights,filename),by_name=True)
                 savedfile_name = os.path.splitext(filename)[0] + ".jpg"
-                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name)
+                test(model, image_path=args.image,video_path=args.video, savedfile=savedfile_name, classname = args.classnames)
     
     elif args.command == "eval":
       # https://github.com/matterport/Mask_RCNN/issues/2474
@@ -402,7 +409,7 @@ if __name__ == '__main__':
         if os.path.isfile(args.weights):
             model.load_weights(args.weights,by_name=True)
             for image_id in dataset_val.image_ids:     
-                APs, ARs, F1_scores = evaluate(dataset, config, image_id):
+                APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
@@ -412,7 +419,7 @@ if __name__ == '__main__':
                 path_weight = os.path.join(args.weights, weight)
                 model.load_weights(path_weight,by_name=True)
                 for image_id in dataset_val.image_ids:     
-                    APs, ARs, F1_scores = evaluate(dataset, config, image_id):
+                    APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
                 mAP = np.mean(APs)
                 mAR = np.mean(ARs)
                 print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
