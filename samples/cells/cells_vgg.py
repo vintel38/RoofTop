@@ -570,7 +570,7 @@ if __name__ == '__main__':
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
-        elif os.path.isfile(args.weights):
+        elif os.path.isdir(args.weights):
             weights = os.listdir(args.weights)
             for weight in weights:
                 path_weight = os.path.join(args.weights, weight)

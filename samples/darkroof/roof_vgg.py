@@ -241,7 +241,7 @@ def train(model, epochs=30):
                 layers='heads')
                 
                 
-def test(model, image_path = None, video_path=None, savedfile=None):
+def test(model, image_path = None, video_path=None, savedfile=None, classname = None):
     assert image_path or video_path
  
      # Image or video?
@@ -258,7 +258,7 @@ def test(model, image_path = None, video_path=None, savedfile=None):
         _, ax = plt.subplots()
         visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
             class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
-            class_names=None,scores=None, show_mask=True, show_bbox=True)
+            class_names=classname,scores=None, show_mask=True, show_bbox=True)
         # Save output
         if savedfile == None:
             file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
@@ -414,7 +414,7 @@ if __name__ == '__main__':
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
-        elif os.path.isfile(args.weights):
+        elif os.path.isdir(args.weights):
             weights = os.listdir(args.weights)
             for weight in weights:
                 path_weight = os.path.join(args.weights, weight)
