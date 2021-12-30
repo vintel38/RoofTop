@@ -408,22 +408,19 @@ if __name__ == '__main__':
         ARs = list();
         F1_scores = list();
         if os.path.isfile(args.weights):
-            model.load_weights(args.weights,by_name=True)
+            weights = [args.weights]
+        elif os.path.isdir(args.weights):
+            weights = os.listdir(args.weights)        
+        for weight in weights:
+            if len(weights)>1:
+                path_weight = os.path.join(args.weights, weight)
+            model.load_weights(path_weight,by_name=True)
             for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
+                print(image_id)
                 APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
-            print("mAP is {}, mAR is {} and F1_scores are {}".format(mAP, mAR, F1_scores))
-        elif os.path.isdir(args.weights):
-            weights = os.listdir(args.weights)
-            for weight in weights:
-                path_weight = os.path.join(args.weights, weight)
-                model.load_weights(path_weight,by_name=True)
-                for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
-                    APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
-                mAP = np.mean(APs)
-                mAR = np.mean(ARs)
-                print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
+            print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
                 
     else:
         print("'{}' is not recognized.Use 'train' or 'test'".format(args.command))
