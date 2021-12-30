@@ -344,7 +344,7 @@ if __name__ == '__main__':
     elif args.command == "eval":
         config = RoofEvalConfig()
         dataset_val = RoofDataset()
-        dataset_val.load_roof(args.dataset, 'val')
+        dataset_val.load_roof(args.dataset, 'test')
         dataset_val.prepare()
         config.NUM_CLASSES = len(dataset_val.class_info)
     else:
