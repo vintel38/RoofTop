@@ -408,16 +408,55 @@ if __name__ == '__main__':
         ARs = list();
         F1_scores = list();
         if os.path.isfile(args.weights):
+            # tester un seul fichier de poids
             weights = [args.weights]
         elif os.path.isdir(args.weights):
+            # tester plusieurs fichiers de poids contenus dans un dossier 
             weights = os.listdir(args.weights)        
         for weight in weights:
             if len(weights)>1:
                 path_weight = os.path.join(args.weights, weight)
+            else:
+                path_weight = weight
             model.load_weights(path_weight,by_name=True)
-            for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
-                print(image_id)
-                APs, ARs, F1_scores = evaluate(dataset_val, config, image_id)
+            if args.image:
+                # inférer le modèle sur une seule image 
+                lst = os.listdir(os.path.join(args.dataset, 'test'))
+                # evaluate function and also print the detected photo
+                image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, config, lst.index(args.image))
+                scaled_image = modellib.mold_image(image, config) # transfo graphique lambda sur l'image : substract mean pixels to main image
+                sample = np.expand_dims(scaled_image, 0)
+                r = model.detect(sample, verbose=0)[0]
+                # https://github.com/matterport/Mask_RCNN/issues/1285
+                AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+                AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
+                ARs=AR
+                F1_scores=(2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls))
+                APs=AP
+                # APs, ARs, F1_scores = evaluate(dataset_val, config, lst.index(args.image))
+                # Run model detection and generate the color splash effect
+                print("Running on {}".format(args.image))
+                # Read image
+                image = skimage.io.imread(os.path.join(args.dataset, args.image))
+                # Colorful
+                import matplotlib.pyplot as plt
+                _, ax = plt.subplots()
+                visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
+                    class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
+                    class_names=classname,scores=r["scores"], show_mask=True, show_bbox=True)
+                # Save output
+                if True:
+                    file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+                else:
+                    file_name = savedfile
+                plt.savefig(os.path.join(args.logs, file_name))
+            else:
+                # inférer le modèle sur tout un dataset chargé
+                for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
+                    AP, AR, F1_score = evaluate(dataset_val, config, image_id)
+                    APs.append(AP)
+                    ARs.append(AR)
+                    F1_scores.append(F1_score)
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             print("{} weight : mAP is {}, mAR is {} and F1_scores are {}".format(weight, mAP, mAR, F1_scores))
