@@ -248,6 +248,7 @@ def test(model, image_path = None, video_path=None, savedfile=None, classname = 
     if image_path:
         # Run model detection and generate the color splash effect
         print("Running on {}".format(args.image))
+        name, _ = args.image.split('.')
         # Read image
         image = skimage.io.imread(args.image)
         # Detect objects
@@ -260,11 +261,7 @@ def test(model, image_path = None, video_path=None, savedfile=None, classname = 
             class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
             class_names=classname,scores=None, show_mask=True, show_bbox=True)
         # Save output
-        if savedfile == None:
-            file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        else:
-            file_name = savedfile
-        plt.savefig(file_name)
+        plt.savefig(os.path.join(args.logs, name + '_d.png'))
         #skimage.io.imsave(file_name, testresult)
     elif video_path:
         pass
@@ -278,10 +275,8 @@ def evaluate(dataset, config, image_id):
     # https://github.com/matterport/Mask_RCNN/issues/1285
     AP, precisions, recalls, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
     AR, positive_ids = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
-    ARs.append(AR)
-    F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
-    APs.append(AP)
-    return APs, ARs, F1_scores
+    F1_score=(2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls))
+    return AP, AR, F1_score
 
 ############################################################
 #  Training
@@ -420,6 +415,7 @@ if __name__ == '__main__':
                 path_weight = weight
             model.load_weights(path_weight,by_name=True)
             if args.image:
+                name, ext = args.image.split('.')
                 # inférer le modèle sur une seule image 
                 lst = os.listdir(os.path.join(args.dataset, 'test'))
                 # evaluate function and also print the detected photo
@@ -437,19 +433,16 @@ if __name__ == '__main__':
                 # Run model detection and generate the color splash effect
                 print("Running on {}".format(args.image))
                 # Read image
-                image = skimage.io.imread(os.path.join(args.dataset, args.image))
+                image = skimage.io.imread(os.path.join(args.dataset, 'test', args.image))
                 # Colorful
                 import matplotlib.pyplot as plt
                 _, ax = plt.subplots()
                 visualize.get_display_instances_pic(image, boxes=r['rois'], masks=r['masks'], 
                     class_ids = r['class_ids'], class_number=model.config.NUM_CLASSES,ax = ax,
-                    class_names=classname,scores=r["scores"], show_mask=True, show_bbox=True)
+                    class_names=args.classnames,scores=r["scores"], show_mask=True, show_bbox=True)
                 # Save output
-                if True:
-                    file_name = "test_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-                else:
-                    file_name = savedfile
-                plt.savefig(os.path.join(args.logs, file_name))
+                plt.savefig(os.path.join(args.logs, name + '_d.png'))
+                np.save(os.path.join(args.logs, name + 'mask.npy'), r)
             else:
                 # inférer le modèle sur tout un dataset chargé
                 for image_id in tqdm(dataset_val.image_ids, desc='dataset_val.image_ids'):
