@@ -218,7 +218,7 @@ class RoofDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model, epochs=30):
+def train(model, epochs=30, layers='heads'):
     """Train the model."""
     # Training dataset.
     dataset_train = RoofDataset()
@@ -238,7 +238,7 @@ def train(model, epochs=30):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=epochs,
-                layers='heads')
+                layers=layers)
                 
                 
 def test(model, image_path = None, video_path=None, savedfile=None, classname = None):
@@ -316,6 +316,9 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', required=False,
                         metavar="Number of epochs for the training phase",
                         help="Nb of training phases")
+    parser.add_argument('--layers', required=False,
+                        metavar="Layers to train",
+                        help="Layers of the network to train - heads n+ or all")
     # https://stackoverflow.com/questions/32761999/how-to-pass-an-entire-list-as-command-line-argument-in-python/32763023
     parser.add_argument('--classnames', nargs="*", type=str, default=['BG'],required=False,
                         metavar="Names of classes to be detected",
@@ -385,7 +388,7 @@ if __name__ == '__main__':
         print("Loading weights finished")
         # Train or evaluate
         print("Start Training !")
-        train(model, epochs=int(args.epochs))
+        train(model, epochs=int(args.epochs), layers = args.layers)
     elif args.command == "test":
         # we test all models trained on the dataset in different stage
         print(os.getcwd())
