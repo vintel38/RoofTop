@@ -1,4 +1,7 @@
 # Data files and directories common in repo root
+samples/darkroof/preprocessINRIA_TDS.ipynb
+samples/darkroof/*.png
+samples/darkroof/*.jpg
 datasets/
 logs/
 *.h5
